@@ -1,0 +1,3521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>NOCTURNE: CATHEDRAL OF ASH — 65° 3D ASCII Action RPG</title>
+<style>
+  :root {
+    --mc-bg: rgba(16, 20, 28, 0.74);
+    --mc-light: rgba(230, 242, 255, 0.55);
+    --mc-dark: rgba(5, 7, 12, 0.92);
+    --mc-active: rgba(130, 210, 255, 0.55);
+    --mc-sprint: rgba(255, 190, 90, 0.68);
+    --mc-sword: rgba(255, 95, 110, 0.68);
+    --gold: #f6e0b5;
+    --ember: #ff6b35;
+  }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: #020407;
+    overflow: hidden;
+    font-family: "JetBrains Mono", "Fira Code", "Courier New", monospace;
+    color: #e6f0fa;
+  }
+  #gameCanvas {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    display: block;
+    image-rendering: pixelated;
+  }
+
+  /* ==========================================================================
+     CINEMATIC TITLE SCREEN OVERLAY ("NOCTURNE: CATHEDRAL OF ASH")
+     ========================================================================== */
+  #titleOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 50% 45%, rgba(4, 7, 14, 0.38) 0%, rgba(2, 4, 8, 0.88) 100%);
+    backdrop-filter: blur(2px);
+    transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  #titleOverlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(1.08);
+  }
+  .rose-sigil {
+    font-size: 11px;
+    line-height: 1.05;
+    color: rgba(246, 224, 181, 0.32);
+    text-align: center;
+    white-space: pre;
+    margin-bottom: 14px;
+    text-shadow: 0 0 18px rgba(255, 140, 80, 0.45);
+    animation: pulseSigil 4s ease-in-out infinite;
+  }
+  @keyframes pulseSigil {
+    0%, 100% { transform: scale(1); opacity: 0.75; }
+    50% { transform: scale(1.04); opacity: 1; }
+  }
+  .game-logo-main {
+    font-size: clamp(28px, 6vw, 54px);
+    font-weight: 900;
+    letter-spacing: clamp(6px, 1.5vw, 14px);
+    color: #fffaf0;
+    text-shadow:
+      0 0 24px rgba(255, 160, 90, 0.65),
+      0 4px 12px rgba(0, 0, 0, 0.95);
+    text-align: center;
+  }
+  .game-logo-divider {
+    width: min(380px, 78vw);
+    height: 2px;
+    margin: 10px 0;
+    background: linear-gradient(90deg, transparent, #f6ad55, #fffaf0, #f6ad55, transparent);
+    box-shadow: 0 0 12px rgba(255, 160, 90, 0.8);
+  }
+  .game-logo-sub {
+    font-size: clamp(12px, 2.5vw, 18px);
+    font-weight: 700;
+    letter-spacing: clamp(4px, 1vw, 9px);
+    color: #fbd38d;
+    text-shadow: 0 2px 8px #000;
+    margin-bottom: 8px;
+  }
+  .game-logo-lore {
+    font-size: 11px;
+    color: #a0aec0;
+    max-width: 440px;
+    text-align: center;
+    line-height: 1.5;
+    padding: 0 16px;
+    margin-bottom: 28px;
+    text-shadow: 0 1px 4px #000;
+  }
+  #enterGameBtn {
+    position: relative;
+    background: linear-gradient(180deg, rgba(48, 24, 28, 0.92) 0%, rgba(20, 10, 14, 0.96) 100%);
+    border: 2px solid #fbd38d;
+    color: #fffaf0;
+    font-family: inherit;
+    font-size: clamp(13px, 2.5vw, 16px);
+    font-weight: 800;
+    letter-spacing: 3px;
+    padding: 15px 36px;
+    cursor: pointer;
+    box-shadow:
+      0 0 28px rgba(255, 120, 60, 0.45),
+      inset 0 0 14px rgba(251, 211, 141, 0.25);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    animation: btnBreathe 2.4s ease-in-out infinite;
+  }
+  @keyframes btnBreathe {
+    0%, 100% { box-shadow: 0 0 22px rgba(255, 120, 60, 0.4), inset 0 0 12px rgba(251, 211, 141, 0.2); }
+    50% { box-shadow: 0 0 38px rgba(255, 150, 80, 0.75), inset 0 0 20px rgba(251, 211, 141, 0.45); }
+  }
+  #enterGameBtn:hover {
+    transform: translateY(-2px) scale(1.03);
+    background: linear-gradient(180deg, rgba(78, 32, 38, 0.95) 0%, rgba(32, 12, 18, 0.98) 100%);
+    border-color: #ffffff;
+  }
+  #enterGameBtn:active {
+    transform: translateY(1px) scale(0.99);
+  }
+  .controls-hint-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 24px;
+    font-size: 10px;
+    color: #cbd5e0;
+  }
+  .hint-badge {
+    background: rgba(12, 16, 24, 0.78);
+    border: 1px solid rgba(180, 205, 235, 0.3);
+    padding: 5px 10px;
+    border-radius: 3px;
+  }
+
+  /* ==========================================================================
+     IN-GAME HUD & BOSS BAR
+     ========================================================================== */
+  .hud-layer {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+  }
+  .hud-layer.active {
+    opacity: 1;
+  }
+  .top-bar {
+    position: fixed;
+    top: max(10px, env(safe-area-inset-top));
+    left: 10px;
+    right: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    z-index: 15;
+    pointer-events: none;
+  }
+  .scene-card {
+    background: rgba(5, 8, 14, 0.85);
+    border: 1px solid rgba(246, 173, 85, 0.45);
+    padding: 6px 12px;
+    border-radius: 4px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.85);
+  }
+  .scene-title {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+    color: #fff6e0;
+    text-shadow: 0 0 10px rgba(255, 170, 80, 0.65);
+  }
+  .scene-sub {
+    font-size: 10px;
+    color: #a9c4df;
+    margin-top: 2px;
+  }
+  .top-controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+    pointer-events: auto;
+  }
+  .mc-pill {
+    background: var(--mc-bg);
+    border-top: 2px solid var(--mc-light);
+    border-left: 2px solid var(--mc-light);
+    border-right: 2px solid var(--mc-dark);
+    border-bottom: 2px solid var(--mc-dark);
+    color: #e4f0fc;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 6px 10px;
+    cursor: pointer;
+    text-shadow: 1px 1px 0 #000;
+  }
+  .mc-pill.save-btn {
+    background: rgba(32, 86, 62, 0.88);
+    border-top-color: #9ae6b4;
+    border-left-color: #9ae6b4;
+  }
+  .mc-pill.dragon-btn {
+    background: rgba(125, 38, 22, 0.88);
+    border-top-color: #fbd38d;
+    border-left-color: #fbd38d;
+    color: #fffaf0;
+  }
+  .mc-pill.spider-btn {
+    background: rgba(88, 24, 48, 0.85);
+    border-top-color: #feb2b2;
+    border-left-color: #feb2b2;
+    color: #fff5f5;
+  }
+  .mc-pill:active {
+    background: var(--mc-active);
+    transform: translateY(1px);
+  }
+
+  /* Ash Dragon Boss Health Bar */
+  #bossBarWrap {
+    position: fixed;
+    top: max(58px, calc(env(safe-area-inset-top) + 48px));
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(420px, 84vw);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    z-index: 16;
+    pointer-events: none;
+    transition: opacity 0.4s;
+  }
+  .boss-name {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: #fbd38d;
+    text-shadow: 0 2px 6px #000, 0 0 10px rgba(255, 100, 50, 0.8);
+  }
+  .boss-hp-track {
+    width: 100%;
+    height: 7px;
+    background: rgba(12, 8, 10, 0.88);
+    border: 1px solid rgba(251, 211, 141, 0.55);
+    padding: 1px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.85);
+  }
+  #bossHpFill {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #9b2c2c, #f56565, #fbd38d);
+    transition: width 0.18s ease;
+  }
+
+  /* Minecraft Mobile 8-Way Split D-Pad */
+  .mc-dpad {
+    position: fixed;
+    left: max(16px, env(safe-area-inset-left));
+    bottom: max(76px, calc(env(safe-area-inset-bottom) + 66px));
+    width: 156px;
+    height: 156px;
+    display: grid;
+    grid-template-columns: repeat(3, 52px);
+    grid-template-rows: repeat(3, 52px);
+    z-index: 20;
+    pointer-events: auto;
+  }
+  .dpad-btn {
+    background: var(--mc-bg);
+    border-top: 2.5px solid var(--mc-light);
+    border-left: 2.5px solid var(--mc-light);
+    border-right: 2.5px solid var(--mc-dark);
+    border-bottom: 2.5px solid var(--mc-dark);
+    color: rgba(240, 248, 255, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 0 2px 2px rgba(0,0,0,0.95);
+    cursor: pointer;
+    transition: opacity 0.08s, background 0.05s;
+  }
+  .dpad-diag {
+    opacity: 0;
+    pointer-events: none;
+    font-size: 13px;
+    color: rgba(210, 235, 255, 0.88);
+  }
+  .mc-dpad.engaged .dpad-diag {
+    opacity: 0.82;
+    pointer-events: auto;
+  }
+  .dpad-btn.active {
+    background: var(--mc-active);
+    border-top-color: var(--mc-dark);
+    border-left-color: var(--mc-dark);
+    border-right-color: var(--mc-light);
+    border-bottom-color: var(--mc-light);
+    color: #fff;
+    opacity: 1 !important;
+  }
+  .dpad-btn.sprint-on {
+    background: var(--mc-sprint);
+    color: #fffbe6;
+  }
+  .dpad-btn.sword-btn {
+    background: rgba(95, 28, 38, 0.78);
+    border-top-color: #feb2b2;
+    border-left-color: #feb2b2;
+  }
+  .dpad-btn.sword-btn:active, .dpad-btn.sword-btn.active {
+    background: var(--mc-sword);
+  }
+  .dpad-center { font-size: 14px; }
+
+  /* Right Action Cluster */
+  .mc-actions {
+    position: fixed;
+    right: max(14px, env(safe-area-inset-right));
+    bottom: max(76px, calc(env(safe-area-inset-bottom) + 68px));
+    display: grid;
+    grid-template-columns: repeat(3, 54px);
+    grid-template-rows: repeat(2, 54px);
+    gap: 8px;
+    z-index: 20;
+    pointer-events: auto;
+  }
+  .action-btn {
+    width: 54px;
+    height: 54px;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 8.5px;
+    letter-spacing: 0.3px;
+  }
+  .action-btn .ico {
+    font-size: 16px;
+    color: #c4e6ff;
+  }
+  .action-btn.sword-btn .ico {
+    color: #ffd6d6;
+    font-size: 18px;
+  }
+
+  /* Bottom Minecraft Hotbar */
+  .mc-bottom-hud {
+    position: fixed;
+    left: 50%;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    z-index: 20;
+    pointer-events: auto;
+  }
+  .mc-vitals {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2px;
+    font-size: 11px;
+    text-shadow: 1px 1px 2px #000;
+  }
+  .mc-hearts { color: #ff5c7c; letter-spacing: 1px; }
+  .mc-lvl { color: #84ff65; font-weight: 800; font-size: 12px; }
+  .mc-kills { color: #fbd38d; letter-spacing: 0.5px; font-weight: bold; }
+  .mc-xp-bar {
+    width: 100%;
+    height: 5px;
+    background: rgba(10, 16, 12, 0.85);
+    border: 1px solid rgba(132, 255, 101, 0.45);
+    overflow: hidden;
+  }
+  .mc-xp-fill {
+    width: 72%;
+    height: 100%;
+    background: linear-gradient(90deg, #48bb78, #ecc94b, #f56565);
+    transition: width 0.2s;
+  }
+  .mc-hotbar {
+    display: flex;
+    background: rgba(12, 15, 20, 0.88);
+    border: 2px solid rgba(195, 212, 235, 0.55);
+    padding: 2px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.9);
+  }
+  .mc-slot {
+    width: 48px;
+    height: 44px;
+    border: 2px solid rgba(90, 105, 130, 0.45);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #dbe7f5;
+  }
+  .mc-slot.selected {
+    border: 2.5px solid #fff;
+    background: rgba(150, 210, 255, 0.28);
+    box-shadow: inset 0 0 10px rgba(175, 230, 255, 0.5);
+  }
+  .mc-slot-ico { font-size: 14px; font-weight: bold; line-height: 1; }
+  .mc-slot-lbl { font-size: 8px; color: #9bb4ce; margin-top: 3px; }
+  #toast {
+    position: fixed;
+    top: 96px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(4, 8, 14, 0.94);
+    border: 1px solid rgba(255, 215, 140, 0.55);
+    color: #fffaf0;
+    font-size: 11px;
+    padding: 6px 14px;
+    border-radius: 3px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 25;
+    white-space: nowrap;
+  }
+  @media (max-width: 460px) {
+    .mc-dpad { width: 138px; height: 138px; grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(3, 46px); }
+    .mc-actions { grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(2, 46px); gap: 6px; }
+    .action-btn { width: 46px; height: 46px; font-size: 7.5px; }
+    .mc-slot { width: 41px; height: 40px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<!-- ==========================================================================
+     CINEMATIC TITLE SCREEN OVERLAY ("NOCTURNE: CATHEDRAL OF ASH")
+     ========================================================================== -->
+<div id="titleOverlay">
+  <div class="rose-sigil">       . · * · .
+   . *   \ | /   * .
+ .   \    \|/    /   .
+* ──── ❖ ─ ╬ ─ ❖ ──── *
+ '   /    /|\    \   '
+   ' *   / | \   * '
+       ' · * · '</div>
+  <div class="game-logo-main">NOCTURNE</div>
+  <div class="game-logo-divider"></div>
+  <div class="game-logo-sub">CATHEDRAL OF ASH</div>
+  <div class="game-logo-lore">
+    A 65° 3D Micro-ASCII Dark Fantasy Action RPG.<br/>
+    Face <b>Vesperion, The Ash Drake</b> beneath the Imperial Cathedral Arch.
+  </div>
+  <button id="enterGameBtn">⚔ ENTER THE CATHEDRAL ⚔</button>
+  <div class="controls-hint-row">
+    <span class="hint-badge">WASD / D-Pad: Move</span>
+    <span class="hint-badge">SHIFT / ⚡: Sprint &amp; Cape Billow</span>
+    <span class="hint-badge">SPACE / ⚔: 3-Hit Greatsword</span>
+    <span class="hint-badge">🐉 / R: Dragon Breath &amp; Swoop</span>
+  </div>
+</div>
+
+<!-- ==========================================================================
+     IN-GAME HUD LAYER
+     ========================================================================== -->
+<div id="hudContainer" class="hud-layer">
+  <div class="top-bar">
+    <div class="scene-card">
+      <div class="scene-title" id="sceneTitle">NOCTURNE: CATHEDRAL OF ASH</div>
+      <div class="scene-sub" id="sceneSub">Slay Vesperion the Ash Drake &amp; Giant Spiders • Walk Under the 3D Arch</div>
+    </div>
+    <div class="top-controls">
+      <button class="mc-pill dragon-btn" id="dragonActionTopBtn">🐉 DRAGON SWOOP</button>
+      <button class="mc-pill spider-btn" id="spawnSpidersTopBtn">🕷 +SPIDERS</button>
+      <button class="mc-pill" id="raysModeBtn">LIGHT: SUNBEAMS</button>
+      <button class="mc-pill" id="capeColorBtn">CAPE: ROYAL CRIMSON</button>
+      <button class="mc-pill" id="audioBtn">♪ ORCHESTRA: ON</button>
+      <button class="mc-pill save-btn" id="saveBtn">⬇ DOWNLOAD .HTML</button>
+    </div>
+  </div>
+
+  <!-- Ash Dragon Boss Health Bar -->
+  <div id="bossBarWrap">
+    <div class="boss-name" id="bossTitle">🐉 VESPERION, THE ASH DRAKE — SOARING</div>
+    <div class="boss-hp-track"><div id="bossHpFill"></div></div>
+  </div>
+
+  <div id="toast">⚔ Entered the Cathedral of Ash! Watch out for Vesperion's 3D Fire Breath!</div>
+
+  <!-- Minecraft Mobile 8-Way Split D-Pad -->
+  <div class="mc-dpad" id="dpad">
+    <div class="dpad-btn dpad-diag" data-dir="ul">◤</div>
+    <div class="dpad-btn" data-dir="u">▲</div>
+    <div class="dpad-btn dpad-diag" data-dir="ur">◥</div>
+    <div class="dpad-btn" data-dir="l">◀</div>
+    <div class="dpad-btn dpad-center" data-dir="jump">◇</div>
+    <div class="dpad-btn" data-dir="r">▶</div>
+    <div class="dpad-btn dpad-diag" data-dir="dl">◣</div>
+    <div class="dpad-btn" data-dir="d">▼</div>
+    <div class="dpad-btn dpad-diag" data-dir="dr">◢</div>
+  </div>
+
+  <!-- Right Action Cluster -->
+  <div class="mc-actions">
+    <div class="dpad-btn action-btn sword-btn" id="actSword"><span class="ico">⚔</span><span>SWORD</span></div>
+    <div class="dpad-btn action-btn" id="actDragon"><span class="ico">🐉</span><span>DRAGON</span></div>
+    <div class="dpad-btn action-btn" id="actSprint"><span class="ico">⚡</span><span>SPRINT</span></div>
+    <div class="dpad-btn action-btn" id="actJump"><span class="ico">▲</span><span>LEAP</span></div>
+    <div class="dpad-btn action-btn" id="actSpiders"><span class="ico">🕷</span><span>SPIDERS</span></div>
+    <div class="dpad-btn action-btn" id="actScene"><span class="ico">🏛</span><span>ARCH</span></div>
+  </div>
+
+  <div class="mc-bottom-hud">
+    <div class="mc-vitals">
+      <span class="mc-hearts" id="heartsText">♥♥♥♥♥♥♥♥</span>
+      <span class="mc-lvl" id="fpsLabel">60 FPS</span>
+      <span class="mc-kills" id="killsLabel">⚔ SLAIN: 0</span>
+    </div>
+    <div class="mc-xp-bar"><div class="mc-xp-fill" id="xpFill"></div></div>
+    <div class="mc-hotbar" id="hotbar">
+      <div class="mc-slot selected" data-slot="0"><span class="mc-slot-ico">⚔</span><span class="mc-slot-lbl">GREATSWORD</span></div>
+      <div class="mc-slot" data-slot="1"><span class="mc-slot-ico">🐉</span><span class="mc-slot-lbl">ASH DRAKE</span></div>
+      <div class="mc-slot" data-slot="2"><span class="mc-slot-ico">🕷</span><span class="mc-slot-lbl">+SPIDERS</span></div>
+      <div class="mc-slot" data-slot="3"><span class="mc-slot-ico">🏛</span><span class="mc-slot-lbl">3D ARCH</span></div>
+      <div class="mc-slot" data-slot="4"><span class="mc-slot-ico">∩</span><span class="mc-slot-lbl">MOON CAVE</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d', { alpha: false });
+
+  const bloomCanvas = document.createElement('canvas');
+  const bloomCtx = bloomCanvas.getContext('2d');
+
+  // Dual-Resolution ASCII Engine:
+  // World Environment: 6x10 pixel cells
+  // 3D Knight, 5x7 PBD Cape, 3D Ash Dragon & 3D Spiders: 3x5 Nano-ASCII sub-cells
+  const W_CELL_W = 6;
+  const W_CELL_H = 10;
+  const K_CELL_W = 3;
+  const K_CELL_H = 5;
+
+  const BS = String.fromCharCode(92);
+  const GLYPHS = [
+    ' ', '.', ',', ':', ';', '-', '=', '+', '*', 'o',
+    'x', '%', '#', '@', '0', 'Q', '$', '&', '8', 'W',
+    'M', '|', '/', BS,  '(', ')', '_', '~', "'", '`',
+    'v', '^', 'I', 'H', '[', ']', 'd', 'b', 'p', 'q'
+  ];
+  const NUM_GLYPHS = GLYPHS.length;
+
+  function buildFontLUT(cellW, cellH, fontPx) {
+    const lut = new Uint8Array(NUM_GLYPHS * cellW * cellH);
+    const tmp = document.createElement('canvas');
+    tmp.width = cellW;
+    tmp.height = cellH;
+    const tCtx = tmp.getContext('2d');
+    tCtx.font = 'bold ' + fontPx + 'px "JetBrains Mono", "Courier New", monospace';
+    tCtx.textAlign = 'center';
+    tCtx.textBaseline = 'middle';
+
+    for (let g = 0; g < NUM_GLYPHS; g++) {
+      tCtx.fillStyle = '#000';
+      tCtx.fillRect(0, 0, cellW, cellH);
+      tCtx.fillStyle = '#fff';
+      tCtx.fillText(GLYPHS[g], cellW * 0.5, cellH * 0.52);
+      const data = tCtx.getImageData(0, 0, cellW, cellH).data;
+      const offset = g * cellW * cellH;
+      for (let i = 0; i < cellW * cellH; i++) {
+        lut[offset + i] = data[i * 4];
+      }
+    }
+    return lut;
+  }
+
+  const worldLUT = buildFontLUT(W_CELL_W, W_CELL_H, 10);
+  const nanoLUT  = buildFontLUT(K_CELL_W, K_CELL_H, 5.5);
+
+  function packRGB(r, g, b) {
+    return (255 << 24) | ((b & 255) << 16) | ((g & 255) << 8) | (r & 255);
+  }
+
+  let cols = 0, rows = 0, imgW = 0, imgH = 0;
+  let imgData = null, buf32 = null;
+  let cellGlyph = null, cellR = null, cellG = null, cellB = null, cellZ = null;
+
+  // Knight + 5x7 Cape + Greatsword Nano-ASCII buffer (156x156)
+  const KBOX = 156;
+  const kDepth = new Float32Array(KBOX * KBOX);
+  const kMat   = new Uint8Array(KBOX * KBOX);
+  const kNX    = new Float32Array(KBOX * KBOX);
+  const kNY    = new Float32Array(KBOX * KBOX);
+  const kNZ    = new Float32Array(KBOX * KBOX);
+
+  // Spider Nano-ASCII buffer (76x76)
+  const SBOX = 76;
+  const sDepth = new Float32Array(SBOX * SBOX);
+  const sMat   = new Uint8Array(SBOX * SBOX);
+  const sNX    = new Float32Array(SBOX * SBOX);
+  const sNY    = new Float32Array(SBOX * SBOX);
+  const sNZ    = new Float32Array(SBOX * SBOX);
+
+  // 3D Ash Dragon Nano-ASCII buffer (184x154 nano-cells for massive wingspan & serpentine tail!)
+  const DBOX_W = 184;
+  const DBOX_H = 154;
+  const dDepth = new Float32Array(DBOX_W * DBOX_H);
+  const dMat   = new Uint8Array(DBOX_W * DBOX_H);
+  const dNX    = new Float32Array(DBOX_W * DBOX_H);
+  const dNY    = new Float32Array(DBOX_W * DBOX_H);
+  const dNZ    = new Float32Array(DBOX_W * DBOX_H);
+
+  function resize() {
+    const maxW = Math.min(window.innerWidth, 1280);
+    const scale = maxW / Math.max(1, window.innerWidth);
+    const rawW = Math.floor(window.innerWidth * scale);
+    const rawH = Math.floor(window.innerHeight * scale);
+
+    cols = Math.max(64, Math.floor(rawW / W_CELL_W));
+    rows = Math.max(40, Math.floor(rawH / W_CELL_H));
+    imgW = cols * W_CELL_W;
+    imgH = rows * W_CELL_H;
+
+    canvas.width = imgW;
+    canvas.height = imgH;
+    bloomCanvas.width = Math.max(1, imgW >> 2);
+    bloomCanvas.height = Math.max(1, imgH >> 2);
+
+    imgData = ctx.createImageData(imgW, imgH);
+    buf32 = new Uint32Array(imgData.data.buffer);
+
+    const numCells = cols * rows;
+    cellGlyph = new Uint8Array(numCells);
+    cellR = new Uint8Array(numCells);
+    cellG = new Uint8Array(numCells);
+    cellB = new Uint8Array(numCells);
+    cellZ = new Float32Array(numCells);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function hash2(x, y) {
+    const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
+    return n - Math.floor(n);
+  }
+  function noise2(x, y) {
+    const xi = Math.floor(x), yi = Math.floor(y);
+    const xf = x - xi, yf = y - yi;
+    const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    const a = hash2(xi, yi), b = hash2(xi + 1, yi);
+    const c = hash2(xi, yi + 1), d = hash2(xi + 1, yi + 1);
+    return (a * (1 - u) + b * u) * (1 - v) + (c * (1 - u) + d * u) * v;
+  }
+  function fbm2(x, y) {
+    return 0.55 * noise2(x, y) + 0.30 * noise2(x * 2.03, y * 2.03) + 0.15 * noise2(x * 4.1, y * 4.1);
+  }
+
+  const CAM_PITCH = 65 * Math.PI / 180;
+  const COS_P = Math.cos(CAM_PITCH);
+  const SIN_P = Math.sin(CAM_PITCH);
+
+  const lightModes = [
+    { name: 'LIGHT: SUNBEAMS', r: 85, g: 76, b: 42, beamAlpha: 0.28 },
+    { name: 'LIGHT: MOONLIGHT', r: 44, g: 64, b: 88, beamAlpha: 0.24 },
+    { name: 'LIGHT: ASH EMBER', r: 95, g: 48, b: 32, beamAlpha: 0.26 }
+  ];
+  let lightIdx = 0;
+
+  const capePalettes = [
+    { name: 'CAPE: ROYAL CRIMSON', r: 195, g: 32,  b: 48,  trimR: 245, trimG: 205, trimB: 95  },
+    { name: 'CAPE: IMPERIAL BLUE', r: 42,  g: 92,  b: 205, trimR: 235, trimG: 215, trimB: 120 },
+    { name: 'CAPE: OBSIDIAN GOLD', r: 48,  g: 56,  b: 72,  trimR: 240, trimG: 190, trimB: 80  },
+    { name: 'CAPE: EMERALD',       r: 34,  g: 125, b: 68,  trimR: 220, trimG: 235, trimB: 140 }
+  ];
+  let capeIdx = 0;
+
+  // Game State: Starts on Title Screen Attract Mode until player clicks "ENTER THE CATHEDRAL"
+  let gameStarted = false;
+  let introTransition = 0.0; // 0..1 smooth camera swoop from Cathedral Arch down to Knight
+
+  const CAPE_COLS = 5;
+  const CAPE_ROWS = 7;
+
+  const knight = {
+    x: 18.0,
+    z: 8.5,
+    vx: 0.0,
+    vz: 0.0,
+    y: 0.0,
+    vy: 0.0,
+    yaw: 0.25,
+    targetYaw: 0.25,
+    walkCycle: 0.0,
+    isMoving: false,
+    isSprinting: false,
+    sprintToggle: false,
+    leanPitch: 0.0,
+    walkSpeed: 24.0,
+    sprintSpeed: 43.0,
+    attackTimer: 0.0,
+    attackDuration: 0.42,
+    comboStep: 0,
+    hitStopTimer: 0.0,
+    enemiesSlain: 0,
+    hp: 8,
+    name: 'SeerJv',
+    capeMesh: []
+  };
+
+  function initCapeMesh() {
+    knight.capeMesh.length = 0;
+    const cosY = Math.cos(knight.yaw), sinY = Math.sin(knight.yaw);
+    for (let r = 0; r < CAPE_ROWS; r++) {
+      for (let c = 0; c < CAPE_COLS; c++) {
+        const u = (c / (CAPE_COLS - 1)) * 2.0 - 1.0;
+        const lx = u * (3.8 + r * 0.45);
+        const lz = -1.4 - r * 0.8;
+        const ly = 26.2 - r * 2.35;
+        knight.capeMesh.push({
+          mx: lx * cosY + lz * sinY,
+          my: ly,
+          mz: -lx * sinY + lz * cosY
+        });
+      }
+    }
+  }
+  initCapeMesh();
+
+  // ============================================================================
+  // 3D NANO-ASCII ASH DRAGON STATE ("VESPERION, THE ASH DRAKE")
+  // ============================================================================
+  const dragon = {
+    x: 18.0,
+    z: -4.0,
+    y: 16.0,       // Altitude above ground
+    vx: 0.0,
+    vz: 0.0,
+    yaw: 0.0,
+    targetYaw: 0.0,
+    wingPhase: 0.0,
+    orbitAngle: 0.8,
+    state: 'SOAR', // 'SOAR' (high circling), 'BREATH' (low hover fire breath), 'SWOOP' (low melee vulnerable)
+    stateTimer: 4.5,
+    breathTimer: 0.0,
+    hp: 20,
+    maxHp: 20,
+    hitFlash: 0.0,
+    dead: false,
+    respawnTimer: 0.0
+  };
+
+  const ARCH_POS = { x: 18.0, z: -12.0 };
+
+  const obelisks = [
+    { x: -34.0, z: -8.0,  h: 28.0 },
+    { x: -48.0, z: 12.0,  h: 32.0 },
+    { x: -28.0, z: 26.0,  h: 25.0 },
+    { x:  18.0, z: -42.0, h: 35.0 }
+  ];
+
+  const trees = [
+    { x: -20, z: 4,   h: 29, r: 10.8, seed: 1.1 },
+    { x: 42,  z: 2,   h: 31, r: 11.5, seed: 2.4 },
+    { x: 48,  z: 24,  h: 27, r: 10.0, seed: 3.7 },
+    { x: -26, z: 32,  h: 30, r: 11.2, seed: 4.2 },
+    { x: 18,  z: 48,  h: 29, r: 10.8, seed: 5.5 },
+    { x: -8,  z: 50,  h: 26, r: 9.6,  seed: 6.1 },
+    { x: -16, z: -28, h: 32, r: 11.8, seed: 6.8 },
+    { x: 52,  z: -26, h: 31, r: 11.4, seed: 7.0 },
+    { x: -42, z: -22, h: 28, r: 10.4, seed: 7.1 },
+    { x: 64,  z: -6,  h: 32, r: 12.0, seed: 7.3 },
+    { x: 68,  z: 36,  h: 27, r: 10.2, seed: 8.8 },
+    { x: 80,  z: 10,  h: 26, r: 9.6,  seed: 9.4 },
+    { x: 120, z: 4,   h: 33, r: 12.2, seed: 10.6 },
+    { x: 126, z: 30,  h: 28, r: 10.5, seed: 11.2 },
+    { x: 84,  z: 46,  h: 30, r: 11.0, seed: 12.9 }
+  ];
+
+  const spiders = [];
+  const particles = [];
+  const fireParticles = []; // Volumetric 3D Dragon Fire Breath particles
+  const dmgTexts = [];
+
+  function spawnSpiderPack(count = 3, aroundKnight = true) {
+    for (let i = 0; i < count; i++) {
+      const ang = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.6;
+      const dist = aroundKnight ? (16 + Math.random() * 12) : (12 + Math.random() * 35);
+      const sx = (aroundKnight ? knight.x : 18.0) + Math.cos(ang) * dist;
+      const sz = (aroundKnight ? knight.z : 14.0) + Math.sin(ang) * dist;
+      spiders.push({
+        x: sx,
+        z: Math.max(-35, Math.min(62, sz)),
+        vx: 0,
+        vz: 0,
+        yaw: ang + Math.PI,
+        legPhase: Math.random() * 6.28,
+        hp: 3,
+        maxHp: 3,
+        hitFlash: 0,
+        dead: false,
+        deathTimer: 0
+      });
+      spawnRipple(sx, sz, 1.1);
+    }
+    playSpiderSound(true);
+  }
+
+  setTimeout(() => spawnSpiderPack(3, false), 200);
+
+  const cam = {
+    x: knight.x - cols * 0.5,
+    z: knight.z - rows * 0.52
+  };
+
+  const ripples = [];
+  function spawnRipple(x, z, amp = 1.0) {
+    ripples.push({ x, z, r: 1.0, amp });
+    if (ripples.length > 26) ripples.shift();
+  }
+
+  const spores = Array.from({ length: 60 }, () => ({
+    x: -50 + Math.random() * 190,
+    z: -45 + Math.random() * 120,
+    y: 2 + Math.random() * 28,
+    vx: (Math.random() - 0.5) * 2.5,
+    vy: 1.2 + Math.random() * 1.8,
+    ph: Math.random() * 6.28
+  }));
+
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.style.opacity = '1';
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => { el.style.opacity = '0'; }, 3100);
+  }
+
+  function updateBossUI() {
+    const fill = document.getElementById('bossHpFill');
+    const title = document.getElementById('bossTitle');
+    if (dragon.dead) {
+      fill.style.width = '0%';
+      title.textContent = '🐉 VESPERION BANISHED IN ASH (TAP 🐉 TO RESUMMON)';
+    } else {
+      fill.style.width = Math.max(0, (dragon.hp / dragon.maxHp) * 100) + '%';
+      const stateTxt = dragon.state === 'BREATH'
+        ? '🔥 UNLEASHING ASH FIRE!'
+        : (dragon.state === 'SWOOP' ? '⚔ LOW SWOOP (STRIKE NOW!)' : 'SOARING OVER CATHEDRAL');
+      title.textContent = '🐉 VESPERION, THE ASH DRAKE — ' + stateTxt;
+    }
+  }
+
+  function sampleUpperArchitecture(wx, wy, hs, tSec) {
+    if (wx > 56.0) {
+      const dx = (wx - 102.0) / 14.0;
+      const dy = (wy - (-22.0)) / 22.0;
+      const archD = Math.hypot(dx, Math.min(dy, 0)) + Math.max(dy, 0) * 0.6;
+      if (archD < 1.05 && wy > -48 && wy < 0) {
+        const core = Math.max(0, Math.min(1, (1.05 - archD) / 0.9));
+        let g = 12 + Math.floor((hs * 15 + tSec * 3) % 8);
+        let lum = Math.pow(core, 0.68);
+        if (Math.abs(wx - 102.0) < 1.2 && Math.abs(wy % 4) < 2) {
+          lum *= 0.25;
+          g = 21;
+        }
+        return {
+          g,
+          r: Math.floor(85 + lum * 170),
+          gr: Math.floor(110 + lum * 145),
+          b: Math.floor(140 + lum * 115)
+        };
+      }
+      const cliffBottom = -14.0 + Math.sin(wx * 0.07) * 5.0 + noise2(wx * 0.14, wy * 0.14) * 6.0;
+      if (wy < cliffBottom) {
+        const rn = fbm2(wx * 0.16, wy * 0.16);
+        if (rn < 0.25) return { g: 0, r: 4, gr: 6, b: 10 };
+        const g = 3 + Math.floor((hs * 18) % 16);
+        return {
+          g,
+          r: Math.floor(24 + rn * 60),
+          gr: Math.floor(32 + rn * 78),
+          b: Math.floor(44 + rn * 98)
+        };
+      }
+      return null;
+    }
+
+    const wallBottom = -48.0;
+    if (wy > wallBottom) return null;
+    const crenelX = ((wx + 300) % 18 + 18) % 18;
+    const wallTop = crenelX < 11.5 ? -84.0 : -77.0;
+    if (wy < wallTop) return { g: 0, r: 4, gr: 6, b: 10 };
+
+    if (Math.abs(crenelX - 0.5) < 0.8 || Math.abs(crenelX - 11.0) < 0.8) {
+      return { g: 21, r: 96, gr: 118, b: 144 };
+    }
+    if (Math.abs((wy + 100) % 5) < 0.85) {
+      return { g: 26, r: 52, gr: 68, b: 86 };
+    }
+    const sn = fbm2(wx * 0.22, wy * 0.22);
+    const g = hs < 0.25 ? 32 : (hs < 0.5 ? 6 : (hs < 0.75 ? 3 : 12));
+    return {
+      g,
+      r: Math.floor(42 + sn * 65),
+      gr: Math.floor(56 + sn * 80),
+      b: Math.floor(72 + sn * 98)
+    };
+  }
+
+  function getPondSDF(wx, wz) {
+    if (Math.abs(wx - ARCH_POS.x) < 5.5 && wz > -26.0 && wz < 8.5) {
+      return 1.0;
+    }
+    const n1 = fbm2(wx * 0.04, wz * 0.04);
+    let pondWest = Math.hypot((wx - 8.0) / 33.0, (wz - 22.0) / 18.5) - (1.0 + (n1 - 0.5) * 0.55);
+    const pen = 1.0 - Math.hypot((wx - 18.0) / 15.0, (wz - 7.5) / 7.2);
+    if (pen > 0) pondWest += pen * 0.92;
+    const pondEast = Math.hypot((wx - 102.0) / 23.0, (wz - 25.0) / 14.5) - (0.88 + (n1 - 0.5) * 0.45);
+    return Math.min(pondWest, pondEast);
+  }
+
+  // ============================================================================
+  // 3D EUROPEAN TRIUMPHAL ARCH ("ARC DE NOCTURNE") & RUNE OBELISKS
+  // ============================================================================
+  function render3DTriumphalArchAndObelisks(tSec) {
+    const lm = lightModes[lightIdx];
+    const ax = ARCH_POS.x - cam.x;
+    const az = ARCH_POS.z - cam.z;
+
+    if (ax > -40 && ax < cols + 40 && az > -20 && az < rows + 55) {
+      const halfSpanW = 24.0;
+      const archOpenW = 8.5;
+      const totalH = 38.0;
+
+      const cMin = Math.max(0, Math.floor(ax - halfSpanW - 2));
+      const cMax = Math.min(cols - 1, Math.ceil(ax + halfSpanW + 2));
+      const rMin = Math.max(0, Math.floor(az - totalH - 4));
+      const rMax = Math.min(rows - 1, Math.ceil(az + 4));
+
+      for (let r = rMin; r <= rMax; r++) {
+        for (let c = cMin; c <= cMax; c++) {
+          const dx = c - ax;
+          const absX = Math.abs(dx);
+          if (absX > halfSpanW) continue;
+
+          const h = az - r;
+          if (h < -2.0 || h > totalH) continue;
+
+          const vaultRadius = archOpenW;
+          const impostH = 14.5;
+          let isArchOpening = false;
+          if (absX < vaultRadius) {
+            const archCurveH = impostH + Math.sqrt(Math.max(0, vaultRadius * vaultRadius - dx * dx)) * 0.85;
+            if (h < archCurveH) isArchOpening = true;
+          }
+
+          const sideCenter = 16.2;
+          const sideDX = absX - sideCenter;
+          if (Math.abs(sideDX) < 3.2 && h >= 0 && h < 9.5 + Math.sqrt(Math.max(0, 10.2 - sideDX * sideDX)) * 0.65) {
+            isArchOpening = true;
+          }
+
+          if (h > 33.5 && absX > 17.5) continue;
+
+          if (isArchOpening) {
+            if (absX < vaultRadius && h > impostH - 2.0 && h < impostH + vaultRadius * 0.85) {
+              const vaultDist = Math.hypot(dx, (h - impostH) / 0.85);
+              if (vaultDist > vaultRadius - 2.4) {
+                const idx = r * cols + c;
+                const vaultZ = ARCH_POS.z + 6.0;
+                if (vaultZ >= cellZ[idx]) {
+                  cellGlyph[idx] = ((c + r) % 2 === 0) ? 7 : 12;
+                  cellR[idx] = 115; cellG[idx] = 104; cellB[idx] = 88;
+                  cellZ[idx] = vaultZ;
+                }
+              }
+            }
+            continue;
+          }
+
+          const idx = r * cols + c;
+          const structZ = (h > 19.5) ? (ARCH_POS.z + 12.0) : ARCH_POS.z;
+          if (structZ < cellZ[idx]) continue;
+
+          const sunShade = dx < 0 ? 1.08 : 0.86;
+          let g = 12;
+          let sr = 195, sg = 180, sb = 152;
+
+          if (Math.abs(h - 23.5) < 0.9 || Math.abs(h - 28.5) < 0.8 || Math.abs(h - 33.0) < 0.8 || Math.abs(h - 37.2) < 0.7) {
+            g = 6;
+            sr = 235; sg = 220; sb = 190;
+          } else if (h > 29.3 && h < 32.2 && absX < 19.0) {
+            const friezeChars = [32, 33, 20, 15, 21, 7];
+            g = friezeChars[Math.abs(Math.floor(dx * 1.7)) % friezeChars.length];
+            sr = 245; sg = 228; sb = 185;
+          } else if (h < 23.0 && (Math.abs(absX - 9.2) < 0.9 || Math.abs(absX - 12.2) < 0.8 || Math.abs(absX - 20.2) < 0.8 || Math.abs(absX - 23.2) < 0.9)) {
+            g = 21;
+            sr = 225; sg = 210; sb = 182;
+          } else if (Math.hypot(absX - 16.2, h - 18.0) < 2.6) {
+            g = Math.hypot(absX - 16.2, h - 18.0) < 1.3 ? 13 : 15;
+            sr = 240; sg = 215; sb = 165;
+          } else if (absX < vaultRadius + 2.2 && h >= impostH && Math.abs(Math.hypot(dx, (h - impostH) / 0.85) - vaultRadius) < 1.4) {
+            g = Math.abs(dx) < 1.5 ? 20 : (dx < 0 ? 22 : 23);
+            sr = 238; sg = 224; sb = 195;
+          } else if (h < 2.2) {
+            g = 33;
+            sr = 145; sg = 138; sb = 126;
+          } else {
+            const stoneNoise = hash2(Math.floor(dx), Math.floor(h));
+            g = (Math.floor(h) % 3 === 0) ? 26 : (stoneNoise > 0.5 ? 12 : 3);
+            const v = 0.88 + stoneNoise * 0.22;
+            sr = Math.floor(182 * v);
+            sg = Math.floor(168 * v);
+            sb = Math.floor(144 * v);
+          }
+
+          cellGlyph[idx] = g;
+          cellR[idx] = Math.min(255, Math.floor(sr * sunShade + lm.r * 0.22));
+          cellG[idx] = Math.min(255, Math.floor(sg * sunShade + lm.g * 0.22));
+          cellB[idx] = Math.min(255, Math.floor(sb * sunShade + lm.b * 0.22));
+          cellZ[idx] = structZ;
+        }
+      }
+
+      const braziers = [ARCH_POS.x - 10.8, ARCH_POS.x + 10.8];
+      for (let b = 0; b < 2; b++) {
+        const bx = Math.round(braziers[b] - cam.x);
+        const bz = Math.round(ARCH_POS.z + 2.0 - cam.z);
+        for (let fh = 0; fh < 5; fh++) {
+          const fr = bz - fh;
+          const fc = bx + Math.round(Math.sin(tSec * 14.0 + fh * 1.5 + b) * 0.6);
+          if (fc >= 0 && fc < cols && fr >= 0 && fr < rows) {
+            const idx = fr * cols + fc;
+            if (ARCH_POS.z + 2.0 >= cellZ[idx]) {
+              cellGlyph[idx] = fh === 0 ? 30 : (fh < 3 ? 19 : 8);
+              cellR[idx] = 255;
+              cellG[idx] = fh === 0 ? 140 : (220 - fh * 35);
+              cellB[idx] = 55;
+              cellZ[idx] = ARCH_POS.z + 2.0;
+            }
+          }
+        }
+      }
+    }
+
+    for (let i = 0; i < obelisks.length; i++) {
+      const ob = obelisks[i];
+      const ox = Math.round(ob.x - cam.x);
+      const oz = Math.round(ob.z - cam.z);
+      if (ox < -6 || ox > cols + 6 || oz < -5 || oz > rows + 35) continue;
+
+      const topH = Math.floor(ob.h * 0.65);
+      for (let h = 0; h <= topH; h++) {
+        const r = oz - h;
+        if (r < 0 || r >= rows) continue;
+        const halfW = h > topH - 4 ? Math.max(0, (topH - h) * 0.5) : (2.1 - (h / topH) * 0.8);
+        for (let dx = -Math.ceil(halfW); dx <= Math.ceil(halfW); dx++) {
+          const c = ox + dx;
+          if (c < 0 || c >= cols) continue;
+          const idx = r * cols + c;
+          if (ob.z < cellZ[idx]) continue;
+
+          const isRune = (dx === 0 && h > 3 && h < topH - 4 && (h % 3 === 0));
+          const pulse = Math.sin(tSec * 3.5 + i + h * 0.5) * 0.5 + 0.5;
+          cellGlyph[idx] = isRune ? 16 : (dx < 0 ? 22 : (dx > 0 ? 23 : 21));
+          cellR[idx] = isRune ? Math.floor(90 + pulse * 140) : (dx <= 0 ? 135 : 85);
+          cellG[idx] = isRune ? Math.floor(210 + pulse * 45) : (dx <= 0 ? 145 : 95);
+          cellB[idx] = isRune ? 255 : (dx <= 0 ? 165 : 112);
+          cellZ[idx] = ob.z;
+        }
+      }
+    }
+  }
+
+  // ============================================================================
+  // 3D SWAYING ASCII TREES RASTERIZER
+  // ============================================================================
+  function render3DTreesToWorldGrid(tSec) {
+    const lm = lightModes[lightIdx];
+
+    for (let i = 0; i < trees.length; i++) {
+      const tr = trees[i];
+      const baseCol = tr.x - cam.x;
+      const baseRow = tr.z - cam.z;
+      if (baseCol < -22 || baseCol > cols + 22 || baseRow < -15 || baseRow > rows + 45) continue;
+
+      const windSway = Math.sin(tSec * 1.7 + tr.seed) * 1.15;
+      const topH = tr.h * 0.55;
+
+      const minR = Math.max(0, Math.floor(baseRow - topH));
+      const maxR = Math.min(rows - 1, Math.ceil(baseRow + 1));
+
+      for (let r = minR; r <= maxR; r++) {
+        const t = (baseRow - r) / Math.max(1, topH);
+        const curveX = Math.sin(t * 2.6 + tr.seed) * 0.9 + windSway * t * 0.35;
+        const halfW = (1.65 - t * 0.75) + (t < 0.22 ? (0.22 - t) * 4.5 : 0);
+        const centerC = baseCol + curveX;
+
+        const cStart = Math.max(0, Math.floor(centerC - halfW));
+        const cEnd   = Math.min(cols - 1, Math.ceil(centerC + halfW));
+
+        for (let c = cStart; c <= cEnd; c++) {
+          const idx = r * cols + c;
+          if (tr.z < cellZ[idx]) continue;
+
+          const nx = (c - centerC) / Math.max(0.5, halfW);
+          const lum = Math.max(0.2, 0.65 - nx * 0.45);
+          let g = 21;
+          if (nx < -0.55) g = 22;
+          else if (nx > 0.55) g = 23;
+          else if ((c + r) % 2 === 0) g = 12;
+          else g = 33;
+
+          cellGlyph[idx] = g;
+          cellR[idx] = Math.min(255, Math.floor(88 * lum + lm.r * 0.2));
+          cellG[idx] = Math.min(255, Math.floor(58 * lum + lm.g * 0.2));
+          cellB[idx] = Math.min(255, Math.floor(36 * lum + lm.b * 0.2));
+          cellZ[idx] = tr.z;
+        }
+      }
+
+      const lobes = [
+        { ox: -tr.r * 0.45, oy: topH * 0.82, rad: tr.r * 0.72 },
+        { ox:  tr.r * 0.45, oy: topH * 0.78, rad: tr.r * 0.70 },
+        { ox:  0.0,         oy: topH * 1.12, rad: tr.r * 0.86 }
+      ];
+
+      for (let l = 0; l < lobes.length; l++) {
+        const lb = lobes[l];
+        const cx = baseCol + lb.ox + windSway * (0.6 + l * 0.2);
+        const cy = baseRow - lb.oy;
+        const rx = lb.rad;
+        const ry = lb.rad * 0.68;
+
+        const r0 = Math.max(0, Math.floor(cy - ry));
+        const r1 = Math.min(rows - 1, Math.ceil(cy + ry));
+        const c0 = Math.max(0, Math.floor(cx - rx));
+        const c1 = Math.min(cols - 1, Math.ceil(cx + rx));
+
+        for (let r = r0; r <= r1; r++) {
+          for (let c = c0; c <= c1; c++) {
+            const dx = (c - cx) / rx;
+            const dy = (r - cy) / ry;
+            const dSq = dx * dx + dy * dy;
+            const leafNoise = hash2(c + Math.floor(cam.x), r + Math.floor(cam.z));
+            if (dSq > 0.82 + leafNoise * 0.32) continue;
+
+            const idx = r * cols + c;
+            const canopyDepth = tr.z + 2.5;
+            if (canopyDepth < cellZ[idx]) continue;
+
+            const nz = Math.sqrt(Math.max(0, 1.0 - dSq * 0.85));
+            const sunDot = Math.max(0, -dx * 0.55 - dy * 0.60 + nz * 0.58);
+            const shade = Math.min(1.0, sunDot * 0.85 + leafNoise * 0.28);
+
+            let g = 13;
+            if (shade > 0.78) g = 8;
+            else if (shade > 0.62) g = 9;
+            else if (shade > 0.46) g = 17;
+            else if (shade > 0.30) g = 11;
+            else g = 3;
+
+            cellGlyph[idx] = g;
+            cellR[idx] = Math.min(255, Math.floor(16 + shade * 95 + lm.r * shade * 0.55));
+            cellG[idx] = Math.min(255, Math.floor(48 + shade * 165 + lm.g * shade * 0.35));
+            cellB[idx] = Math.min(255, Math.floor(24 + shade * 78));
+            cellZ[idx] = canopyDepth;
+          }
+        }
+      }
+    }
+  }
+
+  // ============================================================================
+  // 3D NANO-ASCII ASH DRAGON RASTERIZER ("VESPERION, THE ASH DRAKE")
+  // Articulated 3D Bat Wings with Stretched Membranes, Serpentine Neck, Horned Head & Whip Tail
+  // ============================================================================
+  function rasterizeAndBlitDragon(tSec) {
+    if (dragon.dead) return;
+
+    const footPxX = (dragon.x - cam.x) * W_CELL_W;
+    const footPxY = (dragon.z - cam.z) * W_CELL_H;
+    const airPxY  = footPxY - dragon.y * SIN_P * W_CELL_H;
+
+    if (footPxX < -280 || footPxX > imgW + 280 || airPxY < -240 || airPxY > imgH + 240) return;
+
+    dDepth.fill(-9999);
+    dMat.fill(0);
+
+    const centerC = DBOX_W * 0.5;
+    const centerR = DBOX_H * 0.54;
+    const cosY = Math.cos(dragon.yaw), sinY = Math.sin(dragon.yaw);
+    const pxScale = 2.65;
+
+    function project3DDragonPt(lx, ly, lz) {
+      const wx = lx * cosY + lz * sinY;
+      const wz = -lx * sinY + lz * cosY;
+      return {
+        sc: centerC + (wx * pxScale) / K_CELL_W,
+        sr: centerR + ((wz * COS_P - ly * SIN_P) * pxScale) / K_CELL_H,
+        depth: wz * SIN_P + ly * COS_P
+      };
+    }
+
+    function drawDragonBone(x1, y1, z1, x2, y2, z2, r1, r2, mat) {
+      const wx1 = x1 * cosY + z1 * sinY;
+      const wz1 = -x1 * sinY + z1 * cosY;
+      const wx2 = x2 * cosY + z2 * sinY;
+      const wz2 = -x2 * sinY + z2 * cosY;
+
+      const p1x = wx1 * pxScale;
+      const p1y = (wz1 * COS_P - y1 * SIN_P) * pxScale;
+      const d1  = wz1 * SIN_P + y1 * COS_P;
+
+      const p2x = wx2 * pxScale;
+      const p2y = (wz2 * COS_P - y2 * SIN_P) * pxScale;
+      const d2  = wz2 * SIN_P + y2 * COS_P;
+
+      const maxR = Math.max(r1, r2) * pxScale + 2.5;
+      const c0 = Math.max(1, Math.floor(centerC + (Math.min(p1x, p2x) - maxR) / K_CELL_W));
+      const c1 = Math.min(DBOX_W - 2, Math.ceil(centerC + (Math.max(p1x, p2x) + maxR) / K_CELL_W));
+      const r0 = Math.max(1, Math.floor(centerR + (Math.min(p1y, p2y) - maxR) / K_CELL_H));
+      const r1_row = Math.min(DBOX_H - 2, Math.ceil(centerR + (Math.max(p1y, p2y) + maxR) / K_CELL_H));
+
+      const sx = p2x - p1x, sy = p2y - p1y;
+      const lenSq = sx * sx + sy * sy;
+
+      for (let r = r0; r <= r1_row; r++) {
+        const py = (r - centerR) * K_CELL_H;
+        for (let c = c0; c <= c1; c++) {
+          const px = (c - centerC) * K_CELL_W;
+          let t = 0.5;
+          if (lenSq > 0.001) {
+            t = Math.max(0.0, Math.min(1.0, ((px - p1x) * sx + (py - p1y) * sy) / lenSq));
+          }
+          const cx = p1x + sx * t;
+          const cy = p1y + sy * t;
+          const rad = Math.max(1.4, (r1 + (r2 - r1) * t) * pxScale);
+          const dx = px - cx, dy = py - cy;
+          const dSq = dx * dx + dy * dy;
+          if (dSq > rad * rad) continue;
+
+          const nz = Math.sqrt(Math.max(0, 1.0 - dSq / (rad * rad)));
+          const depth = (d1 + (d2 - d1) * t) + nz * r1;
+          const idx = r * DBOX_W + c;
+          if (depth <= dDepth[idx]) continue;
+
+          dDepth[idx] = depth;
+          dMat[idx]   = mat;
+          dNX[idx]    = dx / rad;
+          dNY[idx]    = dy / rad;
+          dNZ[idx]    = nz;
+        }
+      }
+    }
+
+    // Rasterize a 3D Wing Membrane Triangle between 3 projected points (pA, pB, pC)
+    function drawWingMembraneTri(pA, pB, pC) {
+      const minC = Math.max(1, Math.floor(Math.min(pA.sc, pB.sc, pC.sc)));
+      const maxC = Math.min(DBOX_W - 2, Math.ceil(Math.max(pA.sc, pB.sc, pC.sc)));
+      const minR = Math.max(1, Math.floor(Math.min(pA.sr, pB.sr, pC.sr)));
+      const maxR = Math.min(DBOX_H - 2, Math.ceil(Math.max(pA.sr, pB.sr, pC.sr)));
+
+      const denom = (pB.sr - pC.sr) * (pA.sc - pC.sc) + (pC.sc - pB.sc) * (pA.sr - pC.sr);
+      if (Math.abs(denom) < 0.001) return;
+
+      for (let r = minR; r <= maxR; r++) {
+        for (let c = minC; c <= maxC; c++) {
+          const w1 = ((pB.sr - pC.sr) * (c - pC.sc) + (pC.sc - pB.sc) * (r - pC.sr)) / denom;
+          const w2 = ((pC.sr - pA.sr) * (c - pC.sc) + (pA.sc - pC.sc) * (r - pC.sr)) / denom;
+          const w3 = 1.0 - w1 - w2;
+          if (w1 < -0.02 || w2 < -0.02 || w3 < -0.02) continue;
+
+          const idx = r * DBOX_W + c;
+          const depth = pA.depth * w1 + pB.depth * w2 + pC.depth * w3 - 0.8;
+          if (depth <= dDepth[idx]) continue;
+
+          dDepth[idx] = depth;
+          dMat[idx]   = 2; // Material 2 = Translucent Ember Wing Membrane
+          dNX[idx]    = (w1 - w2) * 0.5;
+          dNY[idx]    = (w2 - w3) * 0.5;
+          dNZ[idx]    = 0.75;
+        }
+      }
+    }
+
+    // Wingbeat kinematics: powerful slow flaps when soaring, rapid when hovering/breathing fire
+    const flapSin  = Math.sin(dragon.wingPhase);
+    const flapLag  = Math.sin(dragon.wingPhase - 0.75);
+    const bodyBob  = -flapSin * 1.4;
+
+    // 1. Armored Draconic Chest & Torso Core
+    drawDragonBone(0.0, bodyBob + 1.5, 5.5, 0.0, bodyBob + 0.5, -5.5, 4.2, 3.1, 1);
+    // Glowing molten magma heart-core along the sternum
+    drawDragonBone(0.0, bodyBob + 0.2, 4.8, 0.0, bodyBob - 0.2, -1.5, 2.2, 1.8, 3);
+
+    // 2. Serpentine 3-Segment Neck & Horned Dragon Head
+    const neckSway = Math.sin(tSec * 3.0) * 1.1;
+    const headPitch = dragon.state === 'BREATH' ? -2.8 : 1.5;
+    drawDragonBone(0.0, bodyBob + 2.2, 5.2, neckSway * 0.5, bodyBob + 6.2, 9.8, 2.8, 2.2, 1);
+    drawDragonBone(neckSway * 0.5, bodyBob + 6.2, 9.8, neckSway, bodyBob + 9.2 + headPitch * 0.4, 13.8, 2.2, 1.9, 1);
+    // Upper Snout & Skull
+    const headX = neckSway;
+    const headY = bodyBob + 9.2 + headPitch * 0.4;
+    const headZ = 13.8;
+    drawDragonBone(headX, headY, headZ, headX, headY - 0.8 + headPitch * 0.5, headZ + 5.8, 2.1, 1.15, 1);
+    // Lower Articulated Jaw (opens wide during Fire Breath!)
+    const jawDrop = dragon.state === 'BREATH' ? 3.2 : 0.6;
+    drawDragonBone(headX, headY - 1.0, headZ + 0.5, headX, headY - 1.4 - jawDrop, headZ + 4.8, 1.4, 0.75, 4);
+    // Swept-back Obsidian Dragon Horns
+    drawDragonBone(headX - 1.4, headY + 1.2, headZ, headX - 3.6, headY + 4.8, headZ - 4.5, 0.9, 0.35, 4);
+    drawDragonBone(headX + 1.4, headY + 1.2, headZ, headX + 3.6, headY + 4.8, headZ - 4.5, 0.9, 0.35, 4);
+    // Glowing Molten Dragon Eyes / Maw Core
+    if (dragon.state === 'BREATH') {
+      drawDragonBone(headX, headY - 1.2, headZ + 3.5, headX, headY - 1.5, headZ + 5.0, 1.3, 1.3, 3);
+    }
+
+    // 3. Whip-Like 5-Segment Spined Dragon Tail
+    let prevTX = 0.0, prevTY = bodyBob + 0.5, prevTZ = -5.5;
+    for (let s = 1; s <= 5; s++) {
+      const tWhip = Math.sin(tSec * 4.2 - s * 0.85) * (s * 1.35);
+      const curTX = tWhip;
+      const curTY = bodyBob + 0.5 - s * 0.6 + Math.cos(dragon.wingPhase - s * 0.5) * 0.8;
+      const curTZ = -5.5 - s * 3.8;
+      drawDragonBone(prevTX, prevTY, prevTZ, curTX, curTY, curTZ, 2.9 - s * 0.42, Math.max(0.5, 2.9 - (s + 1) * 0.42), s === 5 ? 3 : 1);
+      prevTX = curTX; prevTY = curTY; prevTZ = curTZ;
+    }
+
+    // 4. Dual Articulated 3D Bat Wings (Humerus, Radius, 3 Wing-Strut Fingers & Membrane Webbing!)
+    for (let side = -1; side <= 1; side += 2) {
+      const shX = side * 3.2, shY = bodyBob + 2.4, shZ = 2.8;
+      // Elbow rises and falls with primary flapSin
+      const elX = side * 11.5;
+      const elY = bodyBob + 4.5 + flapSin * 6.8;
+      const elZ = 4.5;
+      // Outer Wing-Wrist trails with phase-delayed flapLag
+      const wrX = side * 22.5;
+      const wrY = bodyBob + 5.0 + flapSin * 5.2 + flapLag * 7.5;
+      const wrZ = 2.2;
+
+      // 3 Wing-Finger Strut Tips fanning backward to form the bat-wing silhouette
+      const tip1X = side * 26.5, tip1Y = wrY + flapLag * 2.5, tip1Z = -2.5;
+      const tip2X = side * 19.5, tip2Y = wrY * 0.75,          tip2Z = -7.5;
+      const tip3X = side * 11.5, tip3Y = bodyBob + 1.2 + flapSin * 2.5, tip3Z = -8.5;
+      const bodyRearX = side * 2.5, bodyRearY = bodyBob + 0.8, bodyRearZ = -4.8;
+
+      // Project wing joints for 3D Membrane Triangles
+      const pSh  = project3DDragonPt(shX, shY, shZ);
+      const pWr  = project3DDragonPt(wrX, wrY, wrZ);
+      const pT1  = project3DDragonPt(tip1X, tip1Y, tip1Z);
+      const pT2  = project3DDragonPt(tip2X, tip2Y, tip2Z);
+      const pT3  = project3DDragonPt(tip3X, tip3Y, tip3Z);
+      const pRear= project3DDragonPt(bodyRearX, bodyRearY, bodyRearZ);
+
+      // Rasterize the 3 leathery wing membrane webs first
+      drawWingMembraneTri(pWr, pT1, pT2);
+      drawWingMembraneTri(pSh, pWr, pT2);
+      drawWingMembraneTri(pSh, pT2, pT3);
+      drawWingMembraneTri(pSh, pT3, pRear);
+
+      // Rasterize the thick 3D Wing Arm Bones & Finger Struts on top
+      drawDragonBone(shX, shY, shZ, elX, elY, elZ, 1.55, 1.25, 4);
+      drawDragonBone(elX, elY, elZ, wrX, wrY, wrZ, 1.25, 0.95, 4);
+      drawDragonBone(wrX, wrY, wrZ, tip1X, tip1Y, tip1Z, 0.85, 0.45, 4);
+      drawDragonBone(wrX, wrY, wrZ, tip2X, tip2Y, tip2Z, 0.75, 0.40, 4);
+      drawDragonBone(elX, elY, elZ, tip3X, tip3Y, tip3Z, 0.75, 0.40, 4);
+    }
+
+    // 5. Cast a Dramatic Ground Shadow on the Meadow / Mirror Pond directly beneath the flying Dragon!
+    const shadowRadC = 14;
+    const shadowRadR = 8;
+    const shCenterC = Math.round(dragon.x - cam.x);
+    const shCenterR = Math.round(dragon.z - cam.z);
+    for (let r = Math.max(0, shCenterR - shadowRadR); r <= Math.min(rows - 1, shCenterR + shadowRadR); r++) {
+      for (let c = Math.max(0, shCenterC - shadowRadC); c <= Math.min(cols - 1, shCenterC + shadowRadC); c++) {
+        const dSq = Math.pow((c - shCenterC) / shadowRadC, 2) + Math.pow((r - shCenterR) / shadowRadR, 2);
+        if (dSq < 1.0) {
+          const py0 = r * W_CELL_H, px0 = c * W_CELL_W;
+          for (let py = 0; py < W_CELL_H; py += 2) {
+            const rowOff = (py0 + py) * imgW + px0;
+            for (let px = 0; px < W_CELL_W; px += 2) {
+              buf32[rowOff + px] = packRGB(4, 6, 10);
+            }
+          }
+        }
+      }
+    }
+
+    // 6. Blit the 3D Nano-ASCII Dragon into the Main Screen Pixel Buffer
+    const darkOutline = packRGB(5, 4, 8);
+    for (let sr = 1; sr < DBOX_H - 1; sr++) {
+      for (let sc = 1; sc < DBOX_W - 1; sc++) {
+        const idx = sr * DBOX_W + sc;
+        const mat = dMat[idx];
+        if (mat === 0) continue;
+
+        const pxX = Math.floor(footPxX + (sc - centerC) * K_CELL_W);
+        const pxY = Math.floor(airPxY  + (sr - centerR) * K_CELL_H);
+        if (pxX < 0 || pxX + K_CELL_W >= imgW || pxY < 0 || pxY + K_CELL_H >= imgH) continue;
+
+        const d = dDepth[idx];
+        const nx = dNX[idx], ny = dNY[idx], nz = dNZ[idx];
+        const isContour = (d - dDepth[idx - 1] > 2.2) || (d - dDepth[idx + 1] > 2.2) ||
+                          (d - dDepth[idx - DBOX_W] > 2.2) || (d - dDepth[idx + DBOX_W] > 2.2);
+
+        const lum = Math.max(0.18, Math.min(1.0, -nx * 0.50 - ny * 0.45 + nz * 0.75));
+        let g = 12;
+        let cr = 120, cg = 50, cb = 45;
+
+        if (dragon.hitFlash > 0) {
+          g = 13; // '@' white-hot sword slash impact
+          cr = 255; cg = 245; cb = 225;
+        } else if (mat === 3) {
+          // Molten Fire Core / Eyes / Tail Crest (* W @)
+          g = ((sc + sr) % 2 === 0) ? 19 : 8; // 'W' or '*'
+          cr = 255; cg = 185; cb = 65;
+        } else if (mat === 2) {
+          // Stretched Leathery Ember Wing Membrane (% : ~ +)
+          g = ((sc + sr) % 2 === 0) ? 11 : 27; // '%' or '~'
+          cr = Math.floor(115 + lum * 95);
+          cg = Math.floor(32  + lum * 48);
+          cb = Math.floor(38  + lum * 42);
+        } else if (mat === 4) {
+          // Obsidian Wing Bones, Horns & Claws (/ \ | H)
+          g = isContour ? (nx < 0 ? 22 : 23) : 33; // '/', '\', 'H'
+          cr = Math.floor(65 + lum * 95);
+          cg = Math.floor(58 + lum * 82);
+          cb = Math.floor(72 + lum * 98);
+        } else {
+          // Armored Crimson-Ash Dragon Scales (@ Q 0 # M W)
+          if (isContour) g = nx < 0 ? 24 : 25; // '(' or ')'
+          else if (lum > 0.78) g = 20;         // 'M'
+          else if (lum > 0.58) g = 13;         // '@'
+          else if (lum > 0.40) g = 12;         // '#'
+          else g = 6;                          // '='
+
+          cr = Math.min(255, Math.floor(75 + lum * 155));
+          cg = Math.min(255, Math.floor(35 + lum * 75));
+          cb = Math.min(255, Math.floor(42 + lum * 72));
+        }
+
+        const fgPacked = packRGB(cr, cg, cb);
+        const lutBase = g * K_CELL_W * K_CELL_H;
+
+        for (let py = 0; py < K_CELL_H; py++) {
+          const rowOff = (pxY + py) * imgW + pxX;
+          const lutRow = lutBase + py * K_CELL_W;
+          for (let px = 0; px < K_CELL_W; px++) {
+            buf32[rowOff + px] = nanoLUT[lutRow + px] > 90 ? fgPacked : darkOutline;
+          }
+        }
+      }
+    }
+  }
+
+  // ============================================================================
+  // 3D NANO-ASCII GIANT SPIDER RASTERIZER
+  // ============================================================================
+  function rasterizeAndBlitSpider(sp, tSec) {
+    const footPxX = (sp.x - cam.x) * W_CELL_W;
+    const footPxY = (sp.z - cam.z) * W_CELL_H;
+    if (footPxX < -120 || footPxX > imgW + 120 || footPxY < -120 || footPxY > imgH + 120) return;
+
+    sDepth.fill(-9999);
+    sMat.fill(0);
+
+    const centerC = SBOX * 0.5;
+    const centerR = SBOX * 0.58;
+    const cosY = Math.cos(sp.yaw), sinY = Math.sin(sp.yaw);
+    const pxScale = 2.45;
+
+    function drawSpiderBone(x1, y1, z1, x2, y2, z2, r1, r2, mat) {
+      const wx1 = x1 * cosY + z1 * sinY;
+      const wz1 = -x1 * sinY + z1 * cosY;
+      const wx2 = x2 * cosY + z2 * sinY;
+      const wz2 = -x2 * sinY + z2 * cosY;
+
+      const p1x = wx1 * pxScale;
+      const p1y = (wz1 * COS_P - y1 * SIN_P) * pxScale;
+      const d1  = wz1 * SIN_P + y1 * COS_P;
+
+      const p2x = wx2 * pxScale;
+      const p2y = (wz2 * COS_P - y2 * SIN_P) * pxScale;
+      const d2  = wz2 * SIN_P + y2 * COS_P;
+
+      const maxR = Math.max(r1, r2) * pxScale + 2.5;
+      const c0 = Math.max(1, Math.floor(centerC + (Math.min(p1x, p2x) - maxR) / K_CELL_W));
+      const c1 = Math.min(SBOX - 2, Math.ceil(centerC + (Math.max(p1x, p2x) + maxR) / K_CELL_W));
+      const r0 = Math.max(1, Math.floor(centerR + (Math.min(p1y, p2y) - maxR) / K_CELL_H));
+      const r1_row = Math.min(SBOX - 2, Math.ceil(centerR + (Math.max(p1y, p2y) + maxR) / K_CELL_H));
+
+      const sx = p2x - p1x, sy = p2y - p1y;
+      const lenSq = sx * sx + sy * sy;
+
+      for (let r = r0; r <= r1_row; r++) {
+        const py = (r - centerR) * K_CELL_H;
+        for (let c = c0; c <= c1; c++) {
+          const px = (c - centerC) * K_CELL_W;
+          let t = 0.5;
+          if (lenSq > 0.001) {
+            t = Math.max(0.0, Math.min(1.0, ((px - p1x) * sx + (py - p1y) * sy) / lenSq));
+          }
+          const cx = p1x + sx * t;
+          const cy = p1y + sy * t;
+          const rad = Math.max(1.4, (r1 + (r2 - r1) * t) * pxScale);
+          const dx = px - cx, dy = py - cy;
+          const dSq = dx * dx + dy * dy;
+          if (dSq > rad * rad) continue;
+
+          const nz = Math.sqrt(Math.max(0, 1.0 - dSq / (rad * rad)));
+          const depth = (d1 + (d2 - d1) * t) + nz * r1;
+          const idx = r * SBOX + c;
+          if (depth <= sDepth[idx]) continue;
+
+          sDepth[idx] = depth;
+          sMat[idx]   = mat;
+          sNX[idx]    = dx / rad;
+          sNY[idx]    = dy / rad;
+          sNZ[idx]    = nz;
+        }
+      }
+    }
+
+    const deathCurl = sp.dead ? Math.min(1.0, sp.deathTimer * 2.5) : 0.0;
+    const bodyH = sp.dead ? 1.5 : 3.4;
+
+    drawSpiderBone(0.0, bodyH + 2.8, -1.8, 0.0, bodyH + 1.4, -7.2, 3.1, 3.8, 1);
+    drawSpiderBone(0.0, bodyH + 4.4, -3.5, 0.0, bodyH + 3.8, -5.8, 1.4, 1.8, 2);
+    drawSpiderBone(0.0, bodyH + 1.2, 2.2, 0.0, bodyH + 1.8, -1.6, 2.1, 2.5, 1);
+    drawSpiderBone(-0.9, bodyH + 1.8, 2.8,  0.9, bodyH + 1.8, 2.8, 0.85, 0.85, 3);
+
+    const bite = Math.sin(tSec * 10.0) * 0.35;
+    drawSpiderBone(-1.1, bodyH + 1.0, 2.6, -0.7 - bite, bodyH - 0.2, 4.2, 0.7, 0.45, 2);
+    drawSpiderBone( 1.1, bodyH + 1.0, 2.6,  0.7 + bite, bodyH - 0.2, 4.2, 0.7, 0.45, 2);
+
+    const legAngles = [0.65, 0.20, -0.28, -0.78];
+    for (let side = -1; side <= 1; side += 2) {
+      for (let l = 0; l < 4; l++) {
+        const phase = sp.legPhase + l * 1.57 + (side > 0 ? Math.PI : 0);
+        const stepZ = sp.dead ? 0 : Math.sin(phase) * 1.8;
+        const stepLift = sp.dead ? 4.5 * deathCurl : Math.max(0, Math.cos(phase)) * 2.2;
+
+        const baseZ = 1.2 - l * 1.1;
+        const baseX = side * 1.8;
+
+        const kneeDist = (5.4 - deathCurl * 2.8) * side;
+        const kneeZ = baseZ + Math.sin(legAngles[l]) * 3.8 + stepZ * 0.5;
+        const kneeY = bodyH + 5.2 + stepLift * 0.6;
+
+        const footDist = (8.8 - deathCurl * 5.2) * side;
+        const footZ = baseZ + Math.sin(legAngles[l]) * 6.8 + stepZ;
+        const footY = stepLift;
+
+        drawSpiderBone(baseX, bodyH + 1.2, baseZ, kneeDist, kneeY, kneeZ, 0.85, 0.75, 4);
+        drawSpiderBone(kneeDist, kneeY, kneeZ, footDist, footY, footZ, 0.75, 0.48, 4);
+      }
+    }
+
+    const darkShadow = packRGB(3, 4, 8);
+    for (let sr = 1; sr < SBOX - 1; sr++) {
+      for (let sc = 1; sc < SBOX - 1; sc++) {
+        const idx = sr * SBOX + sc;
+        const mat = sMat[idx];
+        if (mat === 0) continue;
+
+        const pxX = Math.floor(footPxX + (sc - centerC) * K_CELL_W);
+        const pxY = Math.floor(footPxY + (sr - centerR) * K_CELL_H);
+        if (pxX < 0 || pxX + K_CELL_W >= imgW || pxY < 0 || pxY + K_CELL_H >= imgH) continue;
+
+        const worldC = Math.floor(pxX / W_CELL_W);
+        const worldR = Math.floor(pxY / W_CELL_H);
+        if (worldC >= 0 && worldC < cols && worldR >= 0 && worldR < rows) {
+          if (cellZ[worldR * cols + worldC] > sp.z + 2.0) continue;
+        }
+
+        const nx = sNX[idx], ny = sNY[idx], nz = sNZ[idx];
+        const lum = Math.max(0.15, Math.min(1.0, -nx * 0.45 - ny * 0.45 + nz * 0.75));
+
+        let g = 12;
+        let cr = 45, cg = 38, cb = 58;
+
+        if (sp.hitFlash > 0) {
+          g = 13;
+          cr = 255; cg = 230; cb = 230;
+        } else if (mat === 3) {
+          g = 8;
+          cr = 255; cg = 45; cb = 55;
+        } else if (mat === 2) {
+          g = 11;
+          cr = Math.floor(165 + lum * 90);
+          cg = Math.floor(25 + lum * 30);
+          cb = Math.floor(40 + lum * 35);
+        } else if (mat === 4) {
+          g = Math.abs(nx) > Math.abs(ny) ? (nx * ny < 0 ? 22 : 23) : 21;
+          cr = Math.floor(55 + lum * 85);
+          cg = Math.floor(48 + lum * 72);
+          cb = Math.floor(72 + lum * 95);
+        } else {
+          g = lum > 0.7 ? 15 : (lum > 0.45 ? 12 : 3);
+          cr = Math.floor(38 + lum * 78);
+          cg = Math.floor(34 + lum * 68);
+          cb = Math.floor(52 + lum * 96);
+        }
+
+        const fgPacked = packRGB(cr, cg, cb);
+        const lutBase = g * K_CELL_W * K_CELL_H;
+
+        for (let py = 0; py < K_CELL_H; py++) {
+          const rowOff = (pxY + py) * imgW + pxX;
+          const lutRow = lutBase + py * K_CELL_W;
+          for (let px = 0; px < K_CELL_W; px++) {
+            buf32[rowOff + px] = nanoLUT[lutRow + px] > 90 ? fgPacked : darkShadow;
+          }
+        }
+      }
+    }
+  }
+
+  // ============================================================================
+  // ANATOMICAL 3D KNIGHT + SHOULDER-LOCKED 5x7 CLOTH CAPE + 3D GREATSWORD
+  // ============================================================================
+  function rasterizeKnightAndCape(yaw, walkPhase, scale, tSec) {
+    kDepth.fill(-9999);
+    kMat.fill(0);
+
+    const centerSubC = KBOX * 0.5;
+    const footSubR   = KBOX * 0.76;
+    const cosY = Math.cos(yaw), sinY = Math.sin(yaw);
+    const pxScale = scale * 2.85;
+
+    function drawOrientedBone(x1, y1, z1, x2, y2, z2, radStart, radEnd, bulge, mat, partType) {
+      const lean = knight.leanPitch;
+      const cosL = Math.cos(lean), sinL = Math.sin(lean);
+
+      const ly1 = y1 * cosL - z1 * sinL;
+      const lz1 = y1 * sinL + z1 * cosL;
+      const ly2 = y2 * cosL - z2 * sinL;
+      const lz2 = y2 * sinL + z2 * cosL;
+
+      const wx1 = x1 * cosY + lz1 * sinY;
+      const wz1 = -x1 * sinY + lz1 * cosY;
+      const wx2 = x2 * cosY + lz2 * sinY;
+      const wz2 = -x2 * sinY + lz2 * cosY;
+
+      const p1x = wx1 * pxScale;
+      const p1y = (wz1 * COS_P - ly1 * SIN_P) * pxScale;
+      const z1Depth = wz1 * SIN_P + ly1 * COS_P;
+
+      const p2x = wx2 * pxScale;
+      const p2y = (wz2 * COS_P - ly2 * SIN_P) * pxScale;
+      const z2Depth = wz2 * SIN_P + ly2 * COS_P;
+
+      const maxR = Math.max(radStart, radEnd) * (1.0 + Math.max(0, bulge)) * pxScale + 3.0;
+      const minC = Math.max(2, Math.floor(centerSubC + (Math.min(p1x, p2x) - maxR) / K_CELL_W));
+      const maxC = Math.min(KBOX - 3, Math.ceil(centerSubC + (Math.max(p1x, p2x) + maxR) / K_CELL_W));
+      const minR = Math.max(2, Math.floor(footSubR + (Math.min(p1y, p2y) - maxR) / K_CELL_H));
+      const maxR_row = Math.min(KBOX - 3, Math.ceil(footSubR + (Math.max(p1y, p2y) + maxR) / K_CELL_H));
+
+      const segX = p2x - p1x, segY = p2y - p1y;
+      const segLen = Math.hypot(segX, segY);
+      const tx = segLen > 0.001 ? segX / segLen : 0.0;
+      const ty = segLen > 0.001 ? segY / segLen : 1.0;
+      const perpX = -ty, perpY = tx;
+
+      for (let r = minR; r <= maxR_row; r++) {
+        const py = (r - footSubR) * K_CELL_H;
+        for (let c = minC; c <= maxC; c++) {
+          const px = (c - centerSubC) * K_CELL_W;
+          const vx = px - p1x, vy = py - p1y;
+          const along = vx * tx + vy * ty;
+          const tClamped = Math.max(0.0, Math.min(1.0, segLen > 0.001 ? along / segLen : 0.5));
+
+          const closestX = p1x + segX * tClamped;
+          const closestY = p1y + segY * tClamped;
+          const dxPx = px - closestX, dyPx = py - closestY;
+
+          const curve = Math.sin(tClamped * Math.PI) * bulge;
+          const radiusPx = Math.max(1.8, (radStart + (radEnd - radStart) * tClamped + curve) * pxScale);
+
+          const distSq = dxPx * dxPx + dyPx * dyPx;
+          if (distSq > radiusPx * radiusPx) continue;
+
+          const distRatio = Math.sqrt(distSq) / radiusPx;
+          const nz = Math.sqrt(Math.max(0.0, 1.0 - distRatio * distRatio));
+          const nx = dxPx / radiusPx, ny = dyPx / radiusPx;
+
+          const depth = (z1Depth + (z2Depth - z1Depth) * tClamped) + nz * ((radStart + radEnd) * 0.5);
+          const idx = r * KBOX + c;
+          if (depth <= kDepth[idx]) continue;
+
+          const across = (vx * perpX + vy * perpY) / radiusPx;
+          const localX = across * cosY - nz * sinY;
+          const localZ = across * sinY + nz * cosY;
+
+          let finalMat = mat;
+
+          if (partType === 10) {
+            if (Math.abs(localX) < 0.18 && tClamped < 0.48) finalMat = 2;
+            if (localZ > 0.25) {
+              if (tClamped > 0.34 && tClamped < 0.50 && Math.abs(localX) > 0.10 && Math.abs(localX) < 0.72) {
+                finalMat = 4;
+              } else if (tClamped > 0.56 && tClamped < 0.84 && ((c + r) % 2 === 0) && Math.abs(localX) < 0.60) {
+                finalMat = 4;
+              } else if (Math.abs(localX) < 0.14 && tClamped > 0.32) {
+                finalMat = 2;
+              }
+            }
+          } else if (partType === 1) {
+            if (localZ > 0.22 && Math.abs(localX) < 0.14) finalMat = 2;
+            else if (localZ < -0.22 && tClamped > 0.20 && tClamped < 0.52 && Math.abs(localX) < 0.36) finalMat = 2;
+          } else if (partType === 2) {
+            if (tClamped > 0.24 && Math.abs(localX) < (tClamped - 0.16) * 0.55) finalMat = 3;
+            else if (Math.abs(localX) > 0.38 && (Math.floor(tClamped * 5) % 2 === 0)) finalMat = 2;
+          } else if (partType === 4) {
+            if (localZ < -0.15) finalMat = 3;
+          }
+
+          kDepth[idx] = depth;
+          kMat[idx]   = finalMat;
+          kNX[idx]    = nx;
+          kNY[idx]    = ny;
+          kNZ[idx]    = nz;
+        }
+      }
+    }
+
+    const isRun = knight.isMoving && knight.isSprinting;
+    const isAttacking = knight.attackTimer > 0;
+    const strideMult = isRun ? 1.55 : 1.0;
+    const swing = knight.isMoving ? Math.sin(walkPhase) * strideMult : Math.sin(tSec * 2.0) * 0.05;
+    const cosPhase = knight.isMoving ? Math.cos(walkPhase) : 0.0;
+    const bob = knight.isMoving ? Math.abs(cosPhase) * (isRun ? 1.65 : 0.85) : 0.0;
+    const baseH = bob;
+
+    const lHipSwing = swing * 3.1;
+    const rHipSwing = -swing * 3.1;
+    const lKneeY = baseH + 8.0 + Math.max(0, lHipSwing) * (isRun ? 0.55 : 0.28);
+    const rKneeY = baseH + 8.0 + Math.max(0, rHipSwing) * (isRun ? 0.55 : 0.28);
+    const lKneeZ = lHipSwing * 0.65 + (isRun ? 0.8 : 0.2);
+    const rKneeZ = rHipSwing * 0.65 + (isRun ? 0.8 : 0.2);
+
+    const lFootY = baseH + 1.0 + Math.max(0, -lHipSwing) * (isRun ? 0.95 : 0.35);
+    const rFootY = baseH + 1.0 + Math.max(0, -rHipSwing) * (isRun ? 0.95 : 0.35);
+    const lFootZ = lHipSwing * 1.05 - Math.max(0, -lHipSwing) * (isRun ? 0.55 : 0.15);
+    const rFootZ = rHipSwing * 1.05 - Math.max(0, -rHipSwing) * (isRun ? 0.55 : 0.15);
+
+    const lArmSwing = -swing * 2.9;
+    const rArmSwing =  swing * 2.9;
+    const elbowBendZ = isRun ? 2.6 : 0.85;
+    const elbowBendY = isRun ? 2.2 : 0.35;
+
+    // 1. SABATONS & SHIN GREAVES
+    drawOrientedBone(-2.35, lFootY + 0.5, lFootZ - 0.6, -2.35, lFootY - 0.2, lFootZ + 1.5, 1.15, 0.75, 0.2, 1, 0);
+    drawOrientedBone( 2.35, rFootY + 0.5, rFootZ - 0.6,  2.35, rFootY - 0.2, rFootZ + 1.5, 1.15, 0.75, 0.2, 1, 0);
+    drawOrientedBone(-2.35, lKneeY, lKneeZ, -2.35, lFootY + 0.4, lFootZ, 1.55, 1.05, 0.35, 1, 0);
+    drawOrientedBone( 2.35, rKneeY, rKneeZ,  2.35, rFootY + 0.4, rFootZ, 1.55, 1.05, 0.35, 1, 0);
+
+    // 2. POLEYNS & THIGHS
+    drawOrientedBone(-2.4, lKneeY + 0.6, lKneeZ + 0.3, -2.4, lKneeY - 0.5, lKneeZ + 0.3, 1.65, 1.55, 0.3, 2, 0);
+    drawOrientedBone( 2.4, rKneeY + 0.6, rKneeZ + 0.3,  2.4, rKneeY - 0.5, rKneeZ + 0.3, 1.65, 1.55, 0.3, 2, 0);
+    drawOrientedBone(-2.3, baseH + 14.2, 0.0, -2.35, lKneeY + 0.2, lKneeZ, 2.05, 1.55, 0.3, 1, 4);
+    drawOrientedBone( 2.3, baseH + 14.2, 0.0,  2.35, rKneeY + 0.2, rKneeZ, 2.05, 1.55, 0.3, 1, 4);
+
+    // 3. LEFT HIP SCABBARD
+    drawOrientedBone(-4.3, baseH + 17.5, 0.5, -5.8, baseH + 5.2, -4.4 - (isRun ? 1.5 : 0.0), 0.72, 0.48, 0.0, 6, 0);
+    if (!isAttacking) {
+      drawOrientedBone(-4.1, baseH + 19.3, 1.6, -4.3, baseH + 17.5, 0.5, 1.05, 0.85, 0.1, 2, 0);
+    }
+
+    // 4. TASSETS, LEATHER BELT, CUIRASS & GORGET
+    drawOrientedBone(0.0, baseH + 17.6, 0.0, 0.0, baseH + 13.2, 0.0, 3.25, 4.35, 0.25, 1, 2);
+    drawOrientedBone(0.0, baseH + 18.2, 0.0, 0.0, baseH + 17.2, 0.0, 3.35, 3.35, 0.1, 5, 0);
+    drawOrientedBone(0.0, baseH + 26.4, 0.0, 0.0, baseH + 18.0, 0.0, 4.65, 3.20, 0.55, 1, 1);
+    drawOrientedBone(0.0, baseH + 28.4, 0.0, 0.0, baseH + 26.0, 0.0, 2.15, 3.10, 0.1, 3, 0);
+
+    // 5. PAULDRONS, GOLD CAPE CLASPS & SEAMLESS 3D COLLAR MANTLE WRAP
+    drawOrientedBone(-4.6, baseH + 26.8, 0.0, -5.7, baseH + 23.4, lArmSwing * 0.2, 2.35, 1.85, 0.45, 1, 0);
+    drawOrientedBone( 4.6, baseH + 26.8, 0.0,  5.7, baseH + 23.4, rArmSwing * 0.2, 2.35, 1.85, 0.45, 1, 0);
+    drawOrientedBone(-3.6, baseH + 26.8, 2.0, -3.6, baseH + 26.2, 2.2, 1.0, 1.0, 0.1, 8, 0);
+    drawOrientedBone( 3.6, baseH + 26.8, 2.0,  3.6, baseH + 26.2, 2.2, 1.0, 1.0, 0.1, 8, 0);
+    drawOrientedBone(-4.4, baseH + 26.9, 0.4, -3.8, baseH + 26.5, -1.8, 1.45, 1.55, 0.2, 7, 0);
+    drawOrientedBone( 4.4, baseH + 26.9, 0.4,  3.8, baseH + 26.5, -1.8, 1.45, 1.55, 0.2, 7, 0);
+    drawOrientedBone(-4.0, baseH + 26.7, -1.5, 4.0, baseH + 26.7, -1.5, 1.65, 1.65, 0.3, 7, 0);
+
+    // 6. LEFT ARM & GAUNTLET
+    const lElbowY = baseH + 19.6, lElbowZ = lArmSwing * 0.55;
+    const lHandY  = baseH + 14.2 + elbowBendY + Math.max(0, lArmSwing) * 0.45;
+    const lHandZ  = lArmSwing * 0.95 + elbowBendZ;
+    drawOrientedBone(-5.5, baseH + 23.6, lArmSwing * 0.2, -6.0, lElbowY, lElbowZ, 1.45, 1.25, 0.15, 3, 0);
+    drawOrientedBone(-6.1, lElbowY + 0.4, lElbowZ, -6.1, lElbowY - 0.4, lElbowZ, 1.5, 1.4, 0.2, 2, 0);
+    drawOrientedBone(-6.0, lElbowY, lElbowZ, -5.3, lHandY, lHandZ, 1.35, 1.0, 0.2, 1, 0);
+    drawOrientedBone(-5.2, lHandY, lHandZ, -5.0, lHandY - 1.2, lHandZ + 0.5, 1.15, 0.85, 0.15, 2, 0);
+
+    // 7. RIGHT ARM & 3D GREATSWORD SLASH KINEMATICS
+    if (isAttacking) {
+      const p = 1.0 - (knight.attackTimer / knight.attackDuration);
+      const easeP = p * p * (3.0 - 2.0 * p);
+
+      let swingAng = 0;
+      let swordElev = 0;
+      if (knight.comboStep === 0) {
+        swingAng = 1.65 - easeP * 3.30;
+        swordElev = 2.0 - Math.sin(p * Math.PI) * 1.5;
+      } else if (knight.comboStep === 1) {
+        swingAng = -1.65 + easeP * 3.30;
+        swordElev = -3.0 + easeP * 8.0;
+      } else {
+        swingAng = 1.8 - easeP * 4.2;
+        swordElev = 1.0;
+      }
+
+      const handDist = 7.2;
+      const rHandX = Math.sin(swingAng) * handDist;
+      const rHandZ = Math.cos(swingAng) * handDist;
+      const rHandY = baseH + 20.5 + swordElev * 0.4;
+
+      const rElbowX = (4.8 + rHandX) * 0.5 + 1.2;
+      const rElbowZ = rHandZ * 0.45;
+      const rElbowY = baseH + 22.0;
+
+      drawOrientedBone(5.4, baseH + 24.5, 0.0, rElbowX, rElbowY, rElbowZ, 1.45, 1.25, 0.15, 3, 0);
+      drawOrientedBone(rElbowX, rElbowY, rElbowZ, rHandX, rHandY, rHandZ, 1.35, 1.05, 0.2, 1, 0);
+
+      const bladeLen = 19.5;
+      const tipX = rHandX + Math.sin(swingAng - 0.15) * bladeLen;
+      const tipZ = rHandZ + Math.cos(swingAng - 0.15) * bladeLen;
+      const tipY = rHandY + swordElev;
+
+      const perpSX = Math.cos(swingAng) * 2.6;
+      const perpSZ = -Math.sin(swingAng) * 2.6;
+      drawOrientedBone(rHandX - perpSX, rHandY, rHandZ - perpSZ, rHandX + perpSX, rHandY, rHandZ + perpSZ, 0.85, 0.85, 0.0, 8, 0);
+      drawOrientedBone(rHandX, rHandY, rHandZ, tipX, tipY, tipZ, 1.15, 0.45, 0.1, 2, 0);
+
+      for (let tr = 1; tr <= 5; tr++) {
+        const trailP = Math.max(0, p - tr * 0.055);
+        const trailEase = trailP * trailP * (3.0 - 2.0 * trailP);
+        const tAng = (knight.comboStep === 1) ? (-1.65 + trailEase * 3.30) : (1.65 - trailEase * 3.30);
+        const prevAng = (knight.comboStep === 1) ? (-1.65 + Math.max(0, trailP - 0.055) * 3.30) : (1.65 - Math.max(0, trailP - 0.055) * 3.30);
+
+        const arcX1 = Math.sin(tAng) * (handDist + bladeLen * 0.82);
+        const arcZ1 = Math.cos(tAng) * (handDist + bladeLen * 0.82);
+        const arcX2 = Math.sin(prevAng) * (handDist + bladeLen * 0.82);
+        const arcZ2 = Math.cos(prevAng) * (handDist + bladeLen * 0.82);
+        drawOrientedBone(arcX1, rHandY + swordElev * 0.7, arcZ1, arcX2, rHandY + swordElev * 0.7, arcZ2, 1.35 - tr * 0.18, 0.9, 0.0, 9, 0);
+      }
+    } else {
+      const rElbowY = baseH + 19.6, rElbowZ = rArmSwing * 0.55;
+      const rHandY  = baseH + 14.2 + elbowBendY + Math.max(0, rArmSwing) * 0.45;
+      const rHandZ  = rArmSwing * 0.95 + elbowBendZ;
+      drawOrientedBone(5.5, baseH + 23.6, rArmSwing * 0.2, 6.0, rElbowY, rElbowZ, 1.45, 1.25, 0.15, 3, 0);
+      drawOrientedBone(6.1, rElbowY + 0.4, rElbowZ, 6.1, rElbowY - 0.4, rElbowZ, 1.5, 1.4, 0.2, 2, 0);
+      drawOrientedBone(6.0, rElbowY, rElbowZ, 5.3, rHandY, rHandZ, 1.35, 1.0, 0.2, 1, 0);
+      drawOrientedBone(5.2, rHandY, rHandZ, 5.0, rHandY - 1.2, rHandZ + 0.5, 1.15, 0.85, 0.15, 2, 0);
+    }
+
+    // 8. VISORED CLOSE-HELM
+    drawOrientedBone(0.0, baseH + 34.0, 0.0, 0.0, baseH + 28.2, 0.45, 2.35, 2.45, 0.85, 1, 10);
+
+    // ========================================================================
+    // 9. SHOULDER-LOCKED 5x7 CLOTH CAPE RASTERIZER
+    // ========================================================================
+    const projX = new Float32Array(CAPE_ROWS * CAPE_COLS);
+    const projY = new Float32Array(CAPE_ROWS * CAPE_COLS);
+    const projZ = new Float32Array(CAPE_ROWS * CAPE_COLS);
+
+    for (let idx = 0; idx < CAPE_ROWS * CAPE_COLS; idx++) {
+      const n = knight.capeMesh[idx];
+      projX[idx] = centerSubC + (n.mx * pxScale) / K_CELL_W;
+      projY[idx] = footSubR   + ((n.mz * COS_P - n.my * SIN_P) * pxScale) / K_CELL_H;
+      projZ[idx] = n.mz * SIN_P + n.my * COS_P;
+    }
+
+    for (let r = 0; r < CAPE_ROWS - 1; r++) {
+      const v0 = r / (CAPE_ROWS - 1);
+      const v1 = (r + 1) / (CAPE_ROWS - 1);
+
+      for (let c = 0; c < CAPE_COLS - 1; c++) {
+        const i00 = r * CAPE_COLS + c;
+        const i10 = r * CAPE_COLS + (c + 1);
+        const i01 = (r + 1) * CAPE_COLS + c;
+        const i11 = (r + 1) * CAPE_COLS + (c + 1);
+
+        const u0 = c / (CAPE_COLS - 1);
+        const u1 = (c + 1) / (CAPE_COLS - 1);
+
+        const minSC = Math.max(2, Math.floor(Math.min(projX[i00], projX[i10], projX[i01], projX[i11]) - 1));
+        const maxSC = Math.min(KBOX - 3, Math.ceil(Math.max(projX[i00], projX[i10], projX[i01], projX[i11]) + 1));
+        const minSR = Math.max(2, Math.floor(Math.min(projY[i00], projY[i10], projY[i01], projY[i11]) - 1));
+        const maxSR = Math.min(KBOX - 3, Math.ceil(Math.max(projY[i00], projY[i10], projY[i01], projY[i11]) + 1));
+
+        const stepsU = Math.max(6, Math.ceil((maxSC - minSC) * 1.8));
+        const stepsV = Math.max(6, Math.ceil((maxSR - minSR) * 1.8));
+
+        for (let sv = 0; sv <= stepsV; sv++) {
+          const tv = sv / stepsV;
+          const vGlobal = v0 + (v1 - v0) * tv;
+
+          for (let su = 0; su <= stepsU; su++) {
+            const tu = su / stepsU;
+            const uGlobal = u0 + (u1 - u0) * tu;
+
+            const w00 = (1 - tu) * (1 - tv);
+            const w10 = tu * (1 - tv);
+            const w01 = (1 - tu) * tv;
+            const w11 = tu * tv;
+
+            const sc = Math.round(projX[i00] * w00 + projX[i10] * w10 + projX[i01] * w01 + projX[i11] * w11);
+            const sr = Math.round(projY[i00] * w00 + projY[i10] * w10 + projY[i01] * w01 + projY[i11] * w11);
+            if (sc < 2 || sc >= KBOX - 2 || sr < 2 || sr >= KBOX - 2) continue;
+
+            const pleatAngle = (uGlobal - 0.5) * Math.PI * 5.0 + Math.sin(vGlobal * 3.0 - tSec * 4.5) * 0.6;
+            const pleatWave  = Math.sin(pleatAngle) * (0.2 + vGlobal * 0.8);
+
+            if (vGlobal > 0.92 && Math.cos((uGlobal - 0.5) * Math.PI * 6.0) < -0.35) continue;
+
+            const depth = (projZ[i00] * w00 + projZ[i10] * w10 + projZ[i01] * w01 + projZ[i11] * w11) + pleatWave * 1.1;
+            const isGoldTrim = (uGlobal < 0.08 || uGlobal > 0.92 || vGlobal > 0.86);
+            const matId = isGoldTrim ? 8 : 7;
+            const nxVal = Math.cos(pleatAngle) * 0.65 + (uGlobal - 0.5) * 0.5;
+            const nyVal = vGlobal - 0.4;
+            const nzVal = 0.68 + pleatWave * 0.28;
+
+            for (let oy = 0; oy <= 1; oy++) {
+              for (let ox = 0; ox <= 1; ox++) {
+                const idx = (sr + oy) * KBOX + (sc + ox);
+                if (depth > kDepth[idx]) {
+                  kDepth[idx] = depth;
+                  kMat[idx]   = matId;
+                  kNX[idx]    = nxVal;
+                  kNY[idx]    = nyVal;
+                  kNZ[idx]    = nzVal;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  function compositeNanoKnightToPixels(footPxX, footPxY, isInWater) {
+    const cw = K_CELL_W, ch = K_CELL_H;
+    const centerSubC = KBOX * 0.5;
+    const footSubR   = KBOX * 0.76;
+    const darkOutlinePacked = packRGB(3, 5, 9);
+    const capeCol = capePalettes[capeIdx];
+
+    for (let sr = 2; sr < KBOX - 2; sr++) {
+      for (let sc = 2; sc < KBOX - 2; sc++) {
+        const idx = sr * KBOX + sc;
+        if (kMat[idx] !== 0) continue;
+        if (kMat[idx - 1] || kMat[idx + 1] || kMat[idx - KBOX] || kMat[idx + KBOX]) {
+          const pxX = Math.floor(footPxX + (sc - centerSubC) * cw);
+          const pxY = Math.floor(footPxY - knight.y * 2.5 + (sr - footSubR) * ch);
+          if (pxX >= 0 && pxX + cw < imgW && pxY >= 0 && pxY + ch < imgH) {
+            for (let py = 0; py < ch; py++) {
+              const rowOff = (pxY + py) * imgW + pxX;
+              for (let px = 0; px < cw; px++) {
+                buf32[rowOff + px] = darkOutlinePacked;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    for (let sr = 1; sr < KBOX - 1; sr++) {
+      for (let sc = 1; sc < KBOX - 1; sc++) {
+        const idx = sr * KBOX + sc;
+        const mat = kMat[idx];
+        if (mat === 0) continue;
+
+        const d = kDepth[idx];
+        const nx = kNX[idx], ny = kNY[idx], nz = kNZ[idx];
+
+        const dL = kDepth[idx - 1], dR = kDepth[idx + 1];
+        const dU = kDepth[idx - KBOX], dD = kDepth[idx + KBOX];
+        const isEdgeL = (d - dL) > 2.1, isEdgeR = (d - dR) > 2.1;
+        const isEdgeU = (d - dU) > 2.1, isEdgeD = (d - dD) > 2.1;
+        const isContour = isEdgeL || isEdgeR || isEdgeU || isEdgeD;
+
+        const diff = Math.max(0, -nx * 0.52 - ny * 0.48 + nz * 0.70);
+        const spec = Math.pow(Math.max(0, -nx * 0.35 - ny * 0.40 + nz * 0.85), 9.0);
+        const rim  = Math.pow(Math.max(0, 1.0 - nz), 1.7) * 0.58;
+        let lum = Math.min(1.0, diff * 0.74 + spec * 0.68 + rim * 0.48 + 0.16);
+
+        let g = 12;
+        let cr = 160, cg = 175, cb = 195;
+
+        if (mat === 9) {
+          g = ((sc + sr) % 2 === 0) ? 8 : 7;
+          cr = 225; cg = 245; cb = 255;
+        } else if (mat === 8) {
+          g = isContour ? (isEdgeL ? 22 : 23) : 6;
+          const gl = 0.55 + lum * 0.60;
+          cr = Math.min(255, Math.floor(capeCol.trimR * gl));
+          cg = Math.min(255, Math.floor(capeCol.trimG * gl));
+          cb = Math.min(255, Math.floor(capeCol.trimB * gl));
+        } else if (mat === 7) {
+          const foldLum = Math.max(0.18, Math.min(1.22, 0.32 + nz * 0.72 - nx * 0.30));
+          if (isEdgeL) g = 22;
+          else if (isEdgeR) g = 23;
+          else if (nz > 0.82) g = 6;
+          else if (nz > 0.64) g = 12;
+          else if (nz > 0.48) g = 11;
+          else g = 3;
+
+          cr = Math.min(255, Math.floor(capeCol.r * foldLum));
+          cg = Math.min(255, Math.floor(capeCol.g * foldLum));
+          cb = Math.min(255, Math.floor(capeCol.b * foldLum));
+        } else if (mat === 4) {
+          g = 6;
+          cr = 14; cg = 20; cb = 30;
+        } else if (mat === 5) {
+          g = 6;
+          cr = Math.floor(135 + lum * 75);
+          cg = Math.floor(90 + lum * 52);
+          cb = Math.floor(55 + lum * 35);
+        } else if (mat === 6) {
+          g = 22;
+          cr = Math.floor(85 + lum * 90);
+          cg = Math.floor(95 + lum * 98);
+          cb = Math.floor(115 + lum * 115);
+        } else if (mat === 3) {
+          g = ((sc + sr) % 2 === 0) ? 11 : 3;
+          const ml = 0.42 + lum * 0.55;
+          cr = Math.floor(150 * ml);
+          cg = Math.floor(166 * ml);
+          cb = Math.floor(188 * ml);
+        } else {
+          if (mat === 2) lum = Math.min(1.0, lum + 0.25);
+
+          if (isContour) {
+            if (isEdgeL && !isEdgeR) {
+              g = Math.abs(ny) > 0.45 ? (ny < 0 ? 22 : 23) : 24;
+            } else if (isEdgeR && !isEdgeL) {
+              g = Math.abs(ny) > 0.45 ? (ny < 0 ? 23 : 22) : 25;
+            } else if (isEdgeU) {
+              g = 31;
+            } else {
+              g = 26;
+            }
+          } else {
+            if (lum > 0.85) g = 13;
+            else if (lum > 0.73) g = 15;
+            else if (lum > 0.61) g = 14;
+            else if (lum > 0.49) g = 12;
+            else if (lum > 0.37) g = 33;
+            else if (lum > 0.26) g = 6;
+            else if (lum > 0.16) g = 7;
+            else g = 3;
+          }
+
+          const steelBase = 0.28 + lum * 0.85;
+          cr = Math.min(255, Math.floor(222 * steelBase + spec * 48));
+          cg = Math.min(255, Math.floor(234 * steelBase + spec * 50));
+          cb = Math.min(255, Math.floor(248 * steelBase + spec * 56));
+        }
+
+        const fgPacked = packRGB(cr, cg, cb);
+        const bgCellPacked = packRGB(cr >> 3, cg >> 3, cb >> 3);
+        const lutBase = g * cw * ch;
+
+        const pxX = Math.floor(footPxX + (sc - centerSubC) * cw);
+        const pxY = Math.floor(footPxY - knight.y * 2.5 + (sr - footSubR) * ch);
+
+        const worldC = Math.floor(pxX / W_CELL_W);
+        const worldR = Math.floor(pxY / W_CELL_H);
+        if (worldC >= 0 && worldC < cols && worldR >= 0 && worldR < rows) {
+          if (cellZ[worldR * cols + worldC] > knight.z + 1.5) continue;
+        }
+
+        if (pxX >= 0 && pxX + cw < imgW && pxY >= 0 && pxY + ch < imgH) {
+          for (let py = 0; py < ch; py++) {
+            const rowOff = (pxY + py) * imgW + pxX;
+            const lutRow = lutBase + py * cw;
+            for (let px = 0; px < cw; px++) {
+              const a = nanoLUT[lutRow + px];
+              buf32[rowOff + px] = a > 90 ? fgPacked : bgCellPacked;
+            }
+          }
+        }
+
+        if (isInWater && (sr % 2 === 0)) {
+          const refPxX = pxX + Math.round(Math.sin(sr * 0.3 + performance.now() * 0.004) * 2);
+          const refPxY = Math.floor(footPxY + 8 + (footSubR - sr) * ch * 0.72);
+          if (refPxX >= 0 && refPxX + cw < imgW && refPxY >= 0 && refPxY + ch < imgH) {
+            const refPacked = packRGB(cr >> 2, cg >> 2, Math.min(255, (cb >> 2) + 18));
+            for (let py = 0; py < ch; py++) {
+              const rowOff = (refPxY + py) * imgW + refPxX;
+              const lutRow = lutBase + py * cw;
+              for (let px = 0; px < cw; px++) {
+                if (nanoLUT[lutRow + px] > 95) {
+                  buf32[rowOff + px] = refPacked;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // ============================================================================
+  // 3D GREATSWORD SLASH (HITS BOTH GIANT SPIDERS & VESPERION THE ASH DRAKE!)
+  // ============================================================================
+  function triggerSwordAttack() {
+    if (!gameStarted || knight.attackTimer > 0.12) return;
+
+    knight.comboStep = (knight.comboStep + 1) % 3;
+    knight.attackDuration = knight.comboStep === 2 ? 0.50 : 0.38;
+    knight.attackTimer = knight.attackDuration;
+
+    // Auto-target nearest Spider or low-swooping Dragon if standing still
+    let bestTarget = null, bestD = 20.0;
+    for (let i = 0; i < spiders.length; i++) {
+      const sp = spiders[i];
+      if (sp.dead) continue;
+      const d = Math.hypot(sp.x - knight.x, sp.z - knight.z);
+      if (d < bestD) { bestD = d; bestTarget = sp; }
+    }
+    if (!dragon.dead && dragon.y < 14.0) {
+      const dDrag = Math.hypot(dragon.x - knight.x, dragon.z - knight.z);
+      if (dDrag < bestD + 4.0) bestTarget = dragon;
+    }
+    if (bestTarget && !knight.isMoving) {
+      knight.targetYaw = Math.atan2(bestTarget.x - knight.x, bestTarget.z - knight.z);
+      knight.yaw = knight.targetYaw;
+    }
+
+    const lungeForce = knight.comboStep === 2 ? 18.0 : 10.0;
+    knight.vx += Math.sin(knight.yaw) * lungeForce;
+    knight.vz += Math.cos(knight.yaw) * lungeForce;
+
+    playSwordSwingSound(knight.comboStep);
+    spawnRipple(knight.x + Math.sin(knight.yaw) * 3, knight.z + Math.cos(knight.yaw) * 3, knight.comboStep === 2 ? 1.55 : 1.15);
+
+    const reach = knight.comboStep === 2 ? 14.0 : 11.8;
+    const faceX = Math.sin(knight.yaw), faceZ = Math.cos(knight.yaw);
+
+    // 1. Check Hits Against Giant Spiders
+    for (let i = 0; i < spiders.length; i++) {
+      const sp = spiders[i];
+      if (sp.dead) continue;
+      const dx = sp.x - knight.x;
+      const dz = sp.z - knight.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist > reach) continue;
+
+      const dot = (dx * faceX + dz * faceZ) / (dist || 1);
+      if (knight.comboStep === 2 || dot > -0.25) {
+        const dmg = knight.comboStep === 2 ? 2 : 1;
+        sp.hp -= dmg;
+        sp.hitFlash = 0.22;
+        knight.hitStopTimer = 0.038;
+
+        const kb = knight.comboStep === 2 ? 32.0 : 22.0;
+        sp.vx = (dx / (dist || 1)) * kb;
+        sp.vz = (dz / (dist || 1)) * kb;
+
+        playSwordHitSound();
+        spawnRipple(sp.x, sp.z, 1.45);
+
+        for (let p = 0; p < 12; p++) {
+          const pAng = Math.random() * 6.28;
+          const pSpd = 6 + Math.random() * 18;
+          particles.push({
+            x: sp.x, z: sp.z, y: 3.0 + Math.random() * 3.0,
+            vx: Math.cos(pAng) * pSpd, vz: Math.sin(pAng) * pSpd, vy: 10 + Math.random() * 16,
+            life: 0.45 + Math.random() * 0.35,
+            ch: p < 4 ? '*' : 'o',
+            col: p < 4 ? '#fff9db' : '#ff4d6d'
+          });
+        }
+
+        if (sp.hp <= 0) {
+          sp.dead = true;
+          sp.deathTimer = 0.01;
+          knight.enemiesSlain++;
+          document.getElementById('killsLabel').textContent = '⚔ SLAIN: ' + knight.enemiesSlain;
+          dmgTexts.push({ x: sp.x, z: sp.z, y: 8.0, text: 'SLAIN!', life: 1.1, col: '#84ff65' });
+          playSpiderSound(false);
+        } else {
+          dmgTexts.push({ x: sp.x, z: sp.z, y: 7.0, text: '-' + (dmg * 35), life: 0.85, col: '#ff6b8b' });
+        }
+      }
+    }
+
+    // 2. Check Hits Against Vesperion, The Ash Drake (when swooping/hovering or when Knight leaps!)
+    if (!dragon.dead && (dragon.y - knight.y) < 15.0) {
+      const dx = dragon.x - knight.x;
+      const dz = dragon.z - knight.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist < reach + 5.5) {
+        const isAirCrit = knight.y > 2.5;
+        const dmg = (knight.comboStep === 2 ? 3 : 2) + (isAirCrit ? 2 : 0);
+        dragon.hp = Math.max(0, dragon.hp - dmg);
+        dragon.hitFlash = 0.25;
+        knight.hitStopTimer = 0.045;
+
+        playSwordHitSound();
+        spawnRipple(dragon.x, dragon.z, 1.8);
+        updateBossUI();
+
+        for (let p = 0; p < 18; p++) {
+          const pAng = Math.random() * 6.28;
+          const pSpd = 8 + Math.random() * 22;
+          particles.push({
+            x: dragon.x, z: dragon.z, y: dragon.y + 2.0,
+            vx: Math.cos(pAng) * pSpd, vz: Math.sin(pAng) * pSpd, vy: 12 + Math.random() * 18,
+            life: 0.55 + Math.random() * 0.4,
+            ch: p % 2 === 0 ? '✦' : '*',
+            col: p % 2 === 0 ? '#fbd38d' : '#ff6b35'
+          });
+        }
+
+        if (dragon.hp <= 0) {
+          dragon.dead = true;
+          knight.enemiesSlain += 5;
+          document.getElementById('killsLabel').textContent = '⚔ SLAIN: ' + knight.enemiesSlain;
+          dmgTexts.push({ x: dragon.x, z: dragon.z, y: dragon.y + 8.0, text: 'DRAGON VANQUISHED!', life: 2.0, col: '#fbd38d' });
+          playDragonRoar();
+          updateBossUI();
+          toast('🏆 You Vanquished Vesperion, The Ash Drake! (Tap 🐉 DRAGON to Resummon)');
+        } else {
+          dmgTexts.push({
+            x: dragon.x, z: dragon.z, y: dragon.y + 6.0,
+            text: (isAirCrit ? 'CRIT -' : '-') + (dmg * 50),
+            life: 1.0, col: isAirCrit ? '#fbd38d' : '#ff8787'
+          });
+        }
+      }
+    }
+  }
+
+  // Command the Ash Dragon to immediately Swoop & Breathe Fire near the Knight!
+  function triggerDragonAction() {
+    if (dragon.dead) {
+      dragon.dead = false;
+      dragon.hp = dragon.maxHp;
+      dragon.x = knight.x;
+      dragon.z = knight.z - 22.0;
+      dragon.y = 22.0;
+      dragon.state = 'BREATH';
+      dragon.stateTimer = 4.2;
+      playDragonRoar();
+      updateBossUI();
+      toast('🐉 Vesperion, The Ash Drake Rises from the Cathedral Ash!');
+    } else {
+      dragon.state = dragon.state === 'BREATH' ? 'SWOOP' : 'BREATH';
+      dragon.stateTimer = 4.5;
+      playDragonRoar();
+      updateBossUI();
+      toast(dragon.state === 'BREATH'
+        ? '🔥 Vesperion Unleashes Volumetric Ash Fire!'
+        : '⚔ Vesperion Swoops Low — Strike with ⚔ SWORD!');
+    }
+  }
+
+  // ============================================================================
+  // STUDIO-GRADE POLYPHONIC SOUNDTRACK, CATHEDRAL BELL & DRAGON ROAR SYNTHESIS
+  // ============================================================================
+  let aCtx = null, masterGain = null, reverbNode = null, audioOn = false, musicTimer = null;
+
+  function initAudioEngine() {
+    if (aCtx) return;
+    aCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = aCtx.createGain();
+    masterGain.gain.value = 0.78;
+
+    const rate = aCtx.sampleRate;
+    const len = Math.floor(rate * 2.5);
+    const irBuf = aCtx.createBuffer(2, len, rate);
+    for (let ch = 0; ch < 2; ch++) {
+      const data = irBuf.getChannelData(ch);
+      for (let i = 0; i < len; i++) {
+        const decay = Math.pow(1.0 - i / len, 2.6);
+        data[i] = (Math.random() * 2.0 - 1.0) * decay * 0.36;
+      }
+    }
+    reverbNode = aCtx.createConvolver();
+    reverbNode.buffer = irBuf;
+
+    const wetGain = aCtx.createGain();
+    wetGain.gain.value = 0.50;
+    masterGain.connect(aCtx.destination);
+    masterGain.connect(reverbNode);
+    reverbNode.connect(wetGain);
+    wetGain.connect(aCtx.destination);
+  }
+
+  // Deep Gothic Cathedral Toll Bell when clicking "ENTER THE CATHEDRAL"
+  function playCathedralBell() {
+    if (!aCtx) initAudioEngine();
+    if (aCtx.state === 'suspended') aCtx.resume();
+    const now = aCtx.currentTime;
+    const partials = [146.83, 220.0, 293.66, 349.23, 440.0, 587.33];
+    partials.forEach((f, i) => {
+      const osc = aCtx.createOscillator();
+      const gain = aCtx.createGain();
+      osc.type = i % 2 === 0 ? 'sine' : 'triangle';
+      osc.frequency.setValueAtTime(f, now);
+      gain.gain.setValueAtTime(0.08 / (i + 1), now);
+      gain.gain.exponentialRampToValueAtTime(0.0005, now + 3.2 - i * 0.3);
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(now);
+      osc.stop(now + 3.3);
+    });
+  }
+
+  // Deep Sub-Bass Draconic Roar & Flame Rumble
+  function playDragonRoar() {
+    if (!aCtx) return;
+    const now = aCtx.currentTime;
+    const osc1 = aCtx.createOscillator();
+    const osc2 = aCtx.createOscillator();
+    const filter = aCtx.createBiquadFilter();
+    const gain = aCtx.createGain();
+
+    osc1.type = 'sawtooth';
+    osc2.type = 'triangle';
+    osc1.frequency.setValueAtTime(92, now);
+    osc1.frequency.exponentialRampToValueAtTime(44, now + 1.1);
+    osc2.frequency.setValueAtTime(138, now);
+    osc2.frequency.exponentialRampToValueAtTime(62, now + 1.1);
+
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(420, now);
+    filter.frequency.exponentialRampToValueAtTime(140, now + 1.1);
+
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.linearRampToValueAtTime(0.14, now + 0.12);
+    gain.gain.exponentialRampToValueAtTime(0.0008, now + 1.2);
+
+    osc1.connect(filter);
+    osc2.connect(filter);
+    filter.connect(gain);
+    gain.connect(masterGain);
+    osc1.start(now);
+    osc2.start(now);
+    osc1.stop(now + 1.25);
+    osc2.stop(now + 1.25);
+  }
+
+  function playPadChord(freqs, dur = 3.8) {
+    if (!audioOn || !aCtx) return;
+    const now = aCtx.currentTime;
+    freqs.forEach((f, idx) => {
+      const osc = aCtx.createOscillator();
+      const filter = aCtx.createBiquadFilter();
+      const gain = aCtx.createGain();
+
+      osc.type = idx === 0 ? 'sawtooth' : 'triangle';
+      osc.frequency.setValueAtTime(f, now);
+      osc.detune.setValueAtTime((idx - 1.5) * 6, now);
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(380 + idx * 110, now);
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(idx === 0 ? 0.045 : 0.032, now + 0.85);
+      gain.gain.exponentialRampToValueAtTime(0.0005, now + dur);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+      osc.start(now);
+      osc.stop(now + dur + 0.05);
+    });
+  }
+
+  function playLutePluck(freq, delay = 0.0) {
+    if (!audioOn || !aCtx) return;
+    const now = aCtx.currentTime + delay;
+    const osc = aCtx.createOscillator();
+    const filter = aCtx.createBiquadFilter();
+    const gain = aCtx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(freq, now);
+
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(freq * 5.5, now);
+    filter.frequency.exponentialRampToValueAtTime(freq * 1.3, now + 0.28);
+
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.linearRampToValueAtTime(0.042, now + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0006, now + 1.15);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + 1.2);
+  }
+
+  function playWoodwindSolo(freq, delay = 0.0, dur = 1.6) {
+    if (!audioOn || !aCtx) return;
+    const now = aCtx.currentTime + delay;
+    const osc = aCtx.createOscillator();
+    const lfo = aCtx.createOscillator();
+    const lfoGain = aCtx.createGain();
+    const gain = aCtx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, now);
+
+    lfo.frequency.setValueAtTime(5.2, now);
+    lfoGain.gain.setValueAtTime(3.5, now);
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc.frequency);
+
+    gain.gain.setValueAtTime(0.0005, now);
+    gain.gain.linearRampToValueAtTime(0.038, now + 0.22);
+    gain.gain.exponentialRampToValueAtTime(0.0005, now + dur);
+
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(now);
+    lfo.start(now);
+    osc.stop(now + dur + 0.05);
+    lfo.stop(now + dur + 0.05);
+  }
+
+  function playSwordSwingSound(comboIdx) {
+    if (!aCtx) initAudioEngine();
+    if (aCtx.state === 'suspended') aCtx.resume();
+    const now = aCtx.currentTime;
+    const osc = aCtx.createOscillator();
+    const gain = aCtx.createGain();
+    osc.type = 'triangle';
+    const baseF = comboIdx === 2 ? 220 : (comboIdx === 1 ? 310 : 260);
+    osc.frequency.setValueAtTime(baseF, now);
+    osc.frequency.exponentialRampToValueAtTime(baseF * 0.45, now + 0.22);
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + 0.25);
+  }
+
+  function playSwordHitSound() {
+    if (!aCtx) return;
+    const now = aCtx.currentTime;
+    const osc = aCtx.createOscillator();
+    const gain = aCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(145, now);
+    osc.frequency.exponentialRampToValueAtTime(42, now + 0.14);
+    gain.gain.setValueAtTime(0.14, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + 0.16);
+  }
+
+  function playSpiderSound(isSpawn) {
+    if (!aCtx) return;
+    const now = aCtx.currentTime;
+    const osc = aCtx.createOscillator();
+    const gain = aCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(isSpawn ? 180 : 380, now);
+    osc.frequency.exponentialRampToValueAtTime(isSpawn ? 320 : 95, now + 0.18);
+    gain.gain.setValueAtTime(0.05, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.20);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + 0.21);
+  }
+
+  const progression = [
+    { chord: [73.42, 110.00, 146.83, 174.61], arp: [146.83, 220.00, 293.66, 349.23, 329.63, 293.66, 220.00, 174.61], solo: 587.33 },
+    { chord: [58.27, 116.54, 146.83, 174.61], arp: [116.54, 174.61, 233.08, 293.66, 349.23, 293.66, 233.08, 174.61], solo: 523.25 },
+    { chord: [98.00, 146.83, 196.00, 233.08], arp: [196.00, 233.08, 293.66, 392.00, 349.23, 293.66, 233.08, 196.00], solo: 659.25 },
+    { chord: [55.00, 110.00, 164.81, 220.00], arp: [110.00, 164.81, 220.00, 277.18, 329.63, 277.18, 220.00, 164.81], solo: 554.37 }
+  ];
+  let barIdx = 0;
+
+  function triggerMusicBar() {
+    if (!audioOn) return;
+    const bar = progression[barIdx % progression.length];
+    barIdx++;
+    playPadChord(bar.chord, 3.6);
+    for (let i = 0; i < 8; i++) {
+      playLutePluck(bar.arp[i], i * 0.40);
+    }
+    playWoodwindSolo(bar.solo, 0.40, 1.35);
+    if (barIdx % 2 === 0) {
+      playWoodwindSolo(bar.solo * 0.75, 2.0, 1.15);
+    }
+  }
+
+  function startMusicIfOff() {
+    initAudioEngine();
+    if (!audioOn) {
+      audioOn = true;
+      if (aCtx.state === 'suspended') aCtx.resume();
+      document.getElementById('audioBtn').textContent = '♪ ORCHESTRA: ON';
+      triggerMusicBar();
+      musicTimer = setInterval(triggerMusicBar, 3200);
+    }
+  }
+
+  document.getElementById('audioBtn').addEventListener('click', (e) => {
+    initAudioEngine();
+    audioOn = !audioOn;
+    if (audioOn) {
+      if (aCtx.state === 'suspended') aCtx.resume();
+      e.target.textContent = '♪ ORCHESTRA: ON';
+      triggerMusicBar();
+      musicTimer = setInterval(triggerMusicBar, 3200);
+      toast('Dark-Fantasy Cello, Medieval Lute & Cathedral Reverb Active');
+    } else {
+      e.target.textContent = '♪ ORCHESTRA: OFF';
+      clearInterval(musicTimer);
+    }
+  });
+
+  // ============================================================================
+  // "ENTER THE CATHEDRAL" BUTTON & CINEMATIC INTRO TRANSITION
+  // ============================================================================
+  document.getElementById('enterGameBtn').addEventListener('click', () => {
+    if (gameStarted) return;
+    gameStarted = true;
+    introTransition = 0.0;
+
+    // 1. Hide Title Screen with smooth zoom-fade & shatter into rising ember particles
+    document.getElementById('titleOverlay').classList.add('hidden');
+    document.getElementById('hudContainer').classList.add('active');
+
+    // 2. Strike Cathedral Bell, start Orchestral Soundtrack & trigger Dragon Flyby Roar
+    playCathedralBell();
+    startMusicIfOff();
+    setTimeout(() => playDragonRoar(), 450);
+
+    // 3. Command Vesperion to swoop down and breathe fire across the causeway for a dramatic entrance!
+    dragon.x = knight.x - 14.0;
+    dragon.z = knight.z - 12.0;
+    dragon.y = 14.0;
+    dragon.state = 'BREATH';
+    dragon.stateTimer = 4.0;
+    updateBossUI();
+
+    for (let i = 0; i < 35; i++) {
+      const ang = Math.random() * 6.28;
+      const spd = 8 + Math.random() * 24;
+      particles.push({
+        x: knight.x + (Math.random() - 0.5) * 20,
+        z: knight.z + (Math.random() - 0.5) * 14,
+        y: 2 + Math.random() * 14,
+        vx: Math.cos(ang) * spd,
+        vz: Math.sin(ang) * spd,
+        vy: 14 + Math.random() * 20,
+        life: 0.9 + Math.random() * 0.6,
+        ch: i % 2 === 0 ? '✦' : '*',
+        col: i % 2 === 0 ? '#fbd38d' : '#ff6b35'
+      });
+    }
+  });
+
+  // --- INPUT: MINECRAFT MOBILE 8-WAY D-PAD + KEYBOARD + COMBAT ---
+  const dirs = new Set();
+  const dpad = document.getElementById('dpad');
+  const dBtns = dpad.querySelectorAll('.dpad-btn[data-dir]');
+  const sprintBtn = document.getElementById('actSprint');
+
+  function syncDpad() {
+    dpad.classList.toggle('engaged', dirs.size > 0);
+    dBtns.forEach(b => b.classList.toggle('active', dirs.has(b.dataset.dir)));
+  }
+
+  function onTouch(e) {
+    e.preventDefault();
+    dirs.clear();
+    for (let i = 0; i < e.touches.length; i++) {
+      const t = e.touches[i];
+      const el = document.elementFromPoint(t.clientX, t.clientY);
+      const d = el && el.dataset ? el.dataset.dir : null;
+      if (d) {
+        dirs.add(d);
+        if (d === 'jump' && knight.y === 0) {
+          knight.vy = 26.0;
+          spawnRipple(knight.x, knight.z, 1.35);
+        }
+      }
+    }
+    syncDpad();
+  }
+  dpad.addEventListener('touchstart', onTouch, { passive: false });
+  dpad.addEventListener('touchmove', onTouch, { passive: false });
+  dpad.addEventListener('touchend', onTouch, { passive: false });
+  dpad.addEventListener('touchcancel', onTouch, { passive: false });
+
+  let mDown = false;
+  dpad.addEventListener('mousedown', (e) => {
+    const d = e.target && e.target.dataset ? e.target.dataset.dir : null;
+    if (d) {
+      mDown = true;
+      dirs.add(d);
+      if (d === 'jump' && knight.y === 0) { knight.vy = 26.0; spawnRipple(knight.x, knight.z, 1.35); }
+      syncDpad();
+    }
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (!mDown) return;
+    dirs.clear();
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const d = el && el.dataset ? el.dataset.dir : null;
+    if (d) dirs.add(d);
+    syncDpad();
+  });
+  window.addEventListener('mouseup', () => { if (mDown) { mDown = false; dirs.clear(); syncDpad(); } });
+
+  const keys = new Set();
+  let shiftHeld = false;
+  window.addEventListener('keydown', (e) => {
+    if (!gameStarted && (e.key === 'Enter' || e.key === ' ')) {
+      document.getElementById('enterGameBtn').click();
+      return;
+    }
+    if (e.key === 'Shift') shiftHeld = true;
+    const k = e.key.toLowerCase();
+    keys.add(k);
+    if (k === ' ' || k === 'f' || k === 'j' || k === 'k') {
+      triggerSwordAttack();
+    } else if (k === 'e') {
+      spawnSpiderPack(3, true);
+      toast('Spawned 3 Giant Nano-ASCII Spiders!');
+    } else if (k === 'r') {
+      triggerDragonAction();
+    }
+  });
+  window.addEventListener('keyup', (e) => {
+    if (e.key === 'Shift') shiftHeld = false;
+    keys.delete(e.key.toLowerCase());
+  });
+
+  canvas.addEventListener('pointerdown', (e) => {
+    if (!gameStarted) return;
+    const rect = canvas.getBoundingClientRect();
+    const c = ((e.clientX - rect.left) / rect.width) * cols;
+    const r = ((e.clientY - rect.top) / rect.height) * rows;
+    const wx = cam.x + c;
+    const wz = cam.z + r;
+    knight.targetYaw = Math.atan2(wx - knight.x, wz - knight.z);
+    triggerSwordAttack();
+    spawnRipple(wx, wz, 1.25);
+  });
+
+  function bindBtn(id, fn) {
+    const el = document.getElementById(id);
+    const run = (e) => { e.preventDefault(); el.classList.add('active'); fn(); setTimeout(() => el.classList.remove('active'), 140); };
+    el.addEventListener('touchstart', run, { passive: false });
+    el.addEventListener('mousedown', run);
+  }
+
+  bindBtn('actSword', () => triggerSwordAttack());
+  bindBtn('actDragon', () => triggerDragonAction());
+  document.getElementById('dragonActionTopBtn').addEventListener('click', () => triggerDragonAction());
+
+  bindBtn('actSpiders', () => {
+    spawnSpiderPack(3, true);
+    toast('Summoned 3 Giant 3D Nano-ASCII Spiders! Press ⚔ SWORD to cleave!');
+  });
+  document.getElementById('spawnSpidersTopBtn').addEventListener('click', () => {
+    spawnSpiderPack(3, true);
+    toast('Summoned 3 Giant 3D Nano-ASCII Spiders! Press ⚔ SWORD to cleave!');
+  });
+
+  sprintBtn.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    knight.sprintToggle = !knight.sprintToggle;
+    sprintBtn.classList.toggle('sprint-on', knight.sprintToggle);
+    toast(knight.sprintToggle ? '⚡ SPRINT MODE: ON' : '⚡ SPRINT MODE: OFF');
+  });
+
+  bindBtn('actJump', () => {
+    if (knight.y === 0) { knight.vy = 26.0; spawnRipple(knight.x, knight.z, 1.35); }
+  });
+  bindBtn('actScene', () => {
+    knight.x = ARCH_POS.x;
+    knight.z = 2.0;
+    knight.targetYaw = Math.PI;
+    initCapeMesh();
+    toast('Teleported to Cathedral Arch Plaza — Walk North (▲) under the 3D Arch!');
+  });
+
+  const slots = document.querySelectorAll('.mc-slot');
+  slots.forEach(s => {
+    const pick = (e) => {
+      e.preventDefault();
+      slots.forEach(el => el.classList.remove('selected'));
+      s.classList.add('selected');
+      const idx = Number(s.dataset.slot);
+      if (idx === 0) {
+        triggerSwordAttack();
+      } else if (idx === 1) {
+        triggerDragonAction();
+      } else if (idx === 2) {
+        spawnSpiderPack(3, true);
+        toast('Summoned 3 Giant Nano-ASCII Spiders!');
+      } else if (idx === 3) {
+        knight.x = ARCH_POS.x; knight.z = 3.0; knight.targetYaw = Math.PI;
+        initCapeMesh();
+        toast('Cathedral Arch — Walk North (▲) right underneath the 3D Vaulted Arch!');
+      } else if (idx === 4) {
+        knight.x = 98.0; knight.z = 10.0;
+        initCapeMesh();
+        toast('Moonlit Cave Sanctuary');
+      }
+    };
+    s.addEventListener('touchstart', pick, { passive: false });
+    s.addEventListener('mousedown', pick);
+  });
+
+  document.getElementById('raysModeBtn').addEventListener('click', (e) => {
+    lightIdx = (lightIdx + 1) % lightModes.length;
+    e.target.textContent = lightModes[lightIdx].name;
+    toast(lightModes[lightIdx].name);
+  });
+
+  document.getElementById('capeColorBtn').addEventListener('click', (e) => {
+    capeIdx = (capeIdx + 1) % capePalettes.length;
+    e.target.textContent = capePalettes[capeIdx].name;
+    toast(capePalettes[capeIdx].name);
+  });
+
+  document.getElementById('saveBtn').addEventListener('click', () => {
+    // Ensure downloaded HTML starts cleanly on the Title Screen when opened
+    const overlay = document.getElementById('titleOverlay');
+    const hud = document.getElementById('hudContainer');
+    overlay.classList.remove('hidden');
+    hud.classList.remove('active');
+    const htmlSnapshot = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+    if (gameStarted) {
+      overlay.classList.add('hidden');
+      hud.classList.add('active');
+    }
+    const blob = new Blob([htmlSnapshot], { type: 'text/html;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'nocturne-cathedral-of-ash.html';
+    a.click();
+    toast('Downloaded nocturne-cathedral-of-ash.html');
+  });
+
+  // ============================================================================
+  // MAIN PHYSICS, DRAGON AI, CLOTH SOLVER & 60FPS RENDER LOOP
+  // ============================================================================
+  let lastT = performance.now(), stepAcc = 0, frames = 0, fpsAcc = 0;
+
+  function checkSolidWorldCollision(nx, nz) {
+    if (Math.abs(nz - ARCH_POS.z) < 4.2) {
+      const dxArch = Math.abs(nx - ARCH_POS.x);
+      if (dxArch >= 7.8 && dxArch <= 24.5) return true;
+    }
+    for (let i = 0; i < obelisks.length; i++) {
+      if (Math.hypot(nx - obelisks[i].x, nz - obelisks[i].z) < 2.8) return true;
+    }
+    return false;
+  }
+
+  function loop(now) {
+    let dt = Math.min((now - lastT) / 1000, 0.05);
+    lastT = now;
+    const tSec = now * 0.001;
+
+    frames++; fpsAcc += dt;
+    if (fpsAcc >= 0.5) {
+      document.getElementById('fpsLabel').textContent = Math.round(frames / fpsAcc) + ' FPS';
+      frames = 0; fpsAcc = 0;
+    }
+
+    if (knight.hitStopTimer > 0) {
+      knight.hitStopTimer -= dt;
+      dt *= 0.18;
+    }
+
+    if (knight.attackTimer > 0) {
+      knight.attackTimer = Math.max(0, knight.attackTimer - dt);
+    }
+
+    let mx = 0, mz = 0;
+    if (gameStarted) {
+      if (dirs.has('u') || dirs.has('ul') || dirs.has('ur') || keys.has('w') || keys.has('arrowup')) mz -= 1;
+      if (dirs.has('d') || dirs.has('dl') || dirs.has('dr') || keys.has('s') || keys.has('arrowdown')) mz += 1;
+      if (dirs.has('l') || dirs.has('ul') || dirs.has('dl') || keys.has('a') || keys.has('arrowleft')) mx -= 1;
+      if (dirs.has('r') || dirs.has('ur') || dirs.has('dr') || keys.has('d') || keys.has('arrowright')) mx += 1;
+    }
+
+    knight.isSprinting = shiftHeld || knight.sprintToggle;
+
+    const prevKnightX = knight.x;
+    const prevKnightZ = knight.z;
+
+    if (mx !== 0 || mz !== 0) {
+      const len = Math.hypot(mx, mz);
+      mx /= len; mz /= len;
+      knight.isMoving = true;
+      if (knight.attackTimer <= 0.1) {
+        knight.targetYaw = Math.atan2(mx, mz);
+      }
+
+      const curSpeed = knight.isSprinting ? knight.sprintSpeed : knight.walkSpeed;
+      knight.vx = mx * curSpeed;
+      knight.vz = mz * curSpeed;
+
+      const nx = knight.x + knight.vx * dt;
+      const nz = knight.z + knight.vz * dt;
+      if (!checkSolidWorldCollision(nx, knight.z)) {
+        knight.x = Math.max(-85.0, Math.min(165.0, nx));
+      }
+      if (!checkSolidWorldCollision(knight.x, nz)) {
+        knight.z = Math.max(-44.0, Math.min(78.0, nz));
+      }
+
+      knight.walkCycle += dt * (knight.isSprinting ? 16.5 : 10.0);
+      stepAcc += dt;
+      if (stepAcc > (knight.isSprinting ? 0.13 : 0.21)) {
+        stepAcc = 0;
+        spawnRipple(knight.x, knight.z + 1.0, knight.isSprinting ? 1.45 : 1.18);
+      }
+    } else {
+      knight.isMoving = false;
+      knight.vx *= Math.pow(0.05, dt);
+      knight.vz *= Math.pow(0.05, dt);
+      const nx = knight.x + knight.vx * dt;
+      const nz = knight.z + knight.vz * dt;
+      if (!checkSolidWorldCollision(nx, nz)) {
+        knight.x = nx;
+        knight.z = nz;
+      }
+    }
+
+    const targetLean = knight.isMoving ? (knight.isSprinting ? 0.26 : 0.09) : 0.0;
+    knight.leanPitch += (targetLean - knight.leanPitch) * Math.min(1.0, dt * 10.0);
+
+    const displayYaw = (knight.attackTimer > 0 && knight.comboStep === 2)
+      ? (knight.yaw + (1.0 - knight.attackTimer / knight.attackDuration) * Math.PI * 2.0)
+      : knight.yaw;
+
+    let diffYaw = knight.targetYaw - knight.yaw;
+    while (diffYaw > Math.PI) diffYaw -= Math.PI * 2;
+    while (diffYaw < -Math.PI) diffYaw += Math.PI * 2;
+    knight.yaw += diffYaw * Math.min(1.0, dt * 12.0);
+
+    if (knight.y > 0 || knight.vy !== 0) {
+      knight.y += knight.vy * dt;
+      knight.vy -= 58.0 * dt;
+      if (knight.y <= 0) {
+        knight.y = 0;
+        knight.vy = 0;
+        spawnRipple(knight.x, knight.z + 1.0, 1.45);
+      }
+    }
+
+    // ========================================================================
+    // UPDATE 3D ASH DRAGON AI, WINGFLAPS & VOLUMETRIC FIRE BREATH
+    // ========================================================================
+    if (!dragon.dead) {
+      if (dragon.hitFlash > 0) dragon.hitFlash -= dt;
+
+      const flapSpeed = dragon.state === 'BREATH' ? 11.5 : (dragon.state === 'SWOOP' ? 8.5 : 6.2);
+      const prevSin = Math.sin(dragon.wingPhase);
+      dragon.wingPhase += dt * flapSpeed;
+      // Spawn wind shockwave ripples on the Mirror Pond on every powerful downstroke!
+      if (prevSin < 0 && Math.sin(dragon.wingPhase) >= 0) {
+        spawnRipple(dragon.x, dragon.z, dragon.y < 14 ? 1.55 : 0.95);
+      }
+
+      dragon.stateTimer -= dt;
+      if (dragon.stateTimer <= 0) {
+        if (dragon.state === 'SOAR') {
+          dragon.state = 'BREATH';
+          dragon.stateTimer = 4.2;
+          if (gameStarted) playDragonRoar();
+        } else if (dragon.state === 'BREATH') {
+          dragon.state = 'SWOOP';
+          dragon.stateTimer = 4.8;
+        } else {
+          dragon.state = 'SOAR';
+          dragon.stateTimer = 5.5;
+        }
+        updateBossUI();
+      }
+
+      if (dragon.state === 'SOAR') {
+        dragon.orbitAngle += dt * 0.48;
+        const targetX = knight.x + Math.cos(dragon.orbitAngle) * 24.0;
+        const targetZ = knight.z - 6.0 + Math.sin(dragon.orbitAngle * 1.3) * 15.0;
+        const dx = targetX - dragon.x, dz = targetZ - dragon.z;
+        dragon.x += dx * dt * 2.2;
+        dragon.z += dz * dt * 2.2;
+        dragon.y += (18.5 - dragon.y) * dt * 3.0;
+        dragon.targetYaw = Math.atan2(dx, dz);
+      } else if (dragon.state === 'BREATH') {
+        // Hover at medium-low altitude near Knight and sweep a cone of 3D Volumetric Fire Breath!
+        const standOffX = knight.x + Math.sin(tSec * 0.9) * 14.0;
+        const standOffZ = knight.z - 11.0;
+        dragon.x += (standOffX - dragon.x) * dt * 2.5;
+        dragon.z += (standOffZ - dragon.z) * dt * 2.5;
+        dragon.y += (10.5 - dragon.y) * dt * 3.5;
+        dragon.targetYaw = Math.atan2(knight.x - dragon.x, knight.z - dragon.z);
+
+        // Emit Volumetric 3D Fire Stream from the Dragon's open maw!
+        const mawX = dragon.x + Math.sin(dragon.yaw) * 5.2;
+        const mawZ = dragon.z + Math.cos(dragon.yaw) * 5.2;
+        const mawY = dragon.y + 1.5;
+
+        for (let f = 0; f < 3; f++) {
+          const spreadYaw = dragon.yaw + (Math.random() - 0.5) * 0.36;
+          const spd = 28.0 + Math.random() * 14.0;
+          fireParticles.push({
+            x: mawX,
+            z: mawZ,
+            y: mawY,
+            vx: Math.sin(spreadYaw) * spd,
+            vz: Math.cos(spreadYaw) * spd,
+            vy: -14.0 - Math.random() * 6.0,
+            life: 0.65 + Math.random() * 0.25,
+            maxLife: 0.85
+          });
+        }
+      } else if (dragon.state === 'SWOOP') {
+        // Descend low near the Knight so the player can cleave the Dragon with the Greatsword!
+        const swoopX = knight.x + Math.cos(tSec * 1.2) * 8.5;
+        const swoopZ = knight.z + Math.sin(tSec * 1.2) * 6.5;
+        dragon.x += (swoopX - dragon.x) * dt * 2.8;
+        dragon.z += (swoopZ - dragon.z) * dt * 2.8;
+        dragon.y += (4.2 - dragon.y) * dt * 4.0;
+        dragon.targetYaw = Math.atan2(knight.x - dragon.x, knight.z - dragon.z);
+      }
+
+      let dYaw = dragon.targetYaw - dragon.yaw;
+      while (dYaw > Math.PI) dYaw -= Math.PI * 2;
+      while (dYaw < -Math.PI) dYaw += Math.PI * 2;
+      dragon.yaw += dYaw * Math.min(1.0, dt * 6.0);
+    }
+
+    // Update Volumetric Dragon Fire Particles
+    for (let i = fireParticles.length - 1; i >= 0; i--) {
+      const fp = fireParticles[i];
+      fp.x += fp.vx * dt;
+      fp.z += fp.vz * dt;
+      fp.y += fp.vy * dt;
+      if (fp.y <= 0.5) {
+        fp.y = 0.5;
+        fp.vy = Math.abs(fp.vy) * 0.25;
+        fp.vx *= 0.85;
+        fp.vz *= 0.85;
+        if (Math.random() < 0.15) spawnRipple(fp.x, fp.z, 0.9);
+      }
+      fp.life -= dt;
+      if (fp.life <= 0) fireParticles.splice(i, 1);
+    }
+
+    // ========================================================================
+    // SHOULDER-LOCKED 3D PBD CLOTH CAPE SOLVER (Zero Sprint Detachment)
+    // ========================================================================
+    const speedMag = Math.hypot(knight.vx, knight.vz);
+    const runRatio = Math.min(1.0, speedMag / knight.sprintSpeed);
+    const cosK = Math.cos(displayYaw), sinK = Math.sin(displayYaw);
+
+    const isRun = knight.isMoving && knight.isSprinting;
+    const bob = knight.isMoving ? Math.abs(Math.cos(knight.walkCycle)) * (isRun ? 1.65 : 0.85) : 0.0;
+    const cosL = Math.cos(knight.leanPitch), sinL = Math.sin(knight.leanPitch);
+
+    for (let c = 0; c < CAPE_COLS; c++) {
+      const u = (c / (CAPE_COLS - 1)) * 2.0 - 1.0;
+      const localX = u * 4.0;
+      const collarSag = (1.0 - u * u) * 0.55;
+      const rawY = bob + 26.6 - collarSag;
+      const rawZ = -1.25;
+
+      const leanY = rawY * cosL - rawZ * sinL;
+      const leanZ = rawY * sinL + rawZ * cosL;
+
+      const pinNode = knight.capeMesh[c];
+      pinNode.mx = localX * cosK + leanZ * sinK;
+      pinNode.my = leanY;
+      pinNode.mz = -localX * sinK + leanZ * cosK;
+    }
+
+    const worldStepX = (knight.x - prevKnightX) * 3.1;
+    const worldStepZ = (knight.z - prevKnightZ) * 3.1;
+
+    for (let r = 1; r < CAPE_ROWS; r++) {
+      const vRatio = r / (CAPE_ROWS - 1);
+      const rowSpread = 4.0 + vRatio * 3.2;
+
+      for (let c = 0; c < CAPE_COLS; c++) {
+        const u = (c / (CAPE_COLS - 1)) * 2.0 - 1.0;
+        const cur = knight.capeMesh[r * CAPE_COLS + c];
+
+        cur.mx -= worldStepX * 0.32;
+        cur.mz -= worldStepZ * 0.32;
+
+        const flutter = Math.sin(tSec * (isRun ? 15.0 : 4.5) - r * 0.95 + c * 1.1) * (0.18 + runRatio * 0.65);
+        const localTargetX = u * rowSpread + flutter;
+        const billowBack = -1.35 - r * (0.85 + runRatio * 1.25 + (knight.attackTimer > 0 ? 1.1 : 0.0));
+
+        const rawTargetY = bob + 26.6 - r * (2.35 - runRatio * 0.95);
+        const leanTargetY = rawTargetY * cosL - billowBack * sinL;
+        const leanTargetZ = rawTargetY * sinL + billowBack * cosL;
+
+        const targetMX = localTargetX * cosK + leanTargetZ * sinK;
+        const targetMZ = -localTargetX * sinK + leanTargetZ * cosK;
+
+        const follow = Math.min(1.0, dt * (24.0 - r * 1.8));
+        cur.mx += (targetMX - cur.mx) * follow;
+        cur.mz += (targetMZ - cur.mz) * follow;
+        cur.my += (leanTargetY - cur.my) * Math.min(1.0, dt * 18.0);
+      }
+    }
+
+    const restLenV = 2.45;
+    for (let iter = 0; iter < 4; iter++) {
+      for (let r = 1; r < CAPE_ROWS; r++) {
+        const vRatio = r / (CAPE_ROWS - 1);
+        const targetRowWidth = 8.0 + vRatio * 6.4;
+        const restLenH = targetRowWidth / (CAPE_COLS - 1);
+
+        for (let c = 0; c < CAPE_COLS; c++) {
+          const prev = knight.capeMesh[(r - 1) * CAPE_COLS + c];
+          const cur  = knight.capeMesh[r * CAPE_COLS + c];
+
+          const dx = cur.mx - prev.mx;
+          const dy = cur.my - prev.my;
+          const dz = cur.mz - prev.mz;
+          const d = Math.hypot(dx, dy, dz) || 0.0001;
+
+          if (d > restLenV || d < restLenV * 0.75) {
+            const targetD = Math.min(restLenV, Math.max(restLenV * 0.75, d));
+            const corr = (d - targetD) / d;
+            if (r === 1) {
+              cur.mx -= dx * corr;
+              cur.my -= dy * corr;
+              cur.mz -= dz * corr;
+            } else {
+              cur.mx -= dx * corr * 0.75;
+              cur.my -= dy * corr * 0.75;
+              cur.mz -= dz * corr * 0.75;
+              prev.mx += dx * corr * 0.25;
+              prev.my += dy * corr * 0.25;
+              prev.mz += dz * corr * 0.25;
+            }
+          }
+
+          const localZ = cur.mx * sinK + cur.mz * cosK;
+          const spineZAtHeight = (cur.my * sinL) - 1.15 - vRatio * 1.4;
+          if (localZ > spineZAtHeight) {
+            const push = localZ - spineZAtHeight;
+            cur.mx -= sinK * push;
+            cur.mz -= cosK * push;
+          }
+        }
+
+        for (let c = 0; c < CAPE_COLS - 1; c++) {
+          const nL = knight.capeMesh[r * CAPE_COLS + c];
+          const nR = knight.capeMesh[r * CAPE_COLS + c + 1];
+          const dx = nR.mx - nL.mx;
+          const dy = nR.my - nL.my;
+          const dz = nR.mz - nL.mz;
+          const d = Math.hypot(dx, dy, dz) || 0.0001;
+          const diff = (d - restLenH) * 0.45 / d;
+          nL.mx += dx * diff; nL.my += dy * diff; nL.mz += dz * diff;
+          nR.mx -= dx * diff; nR.my -= dy * diff; nR.mz -= dz * diff;
+        }
+      }
+    }
+
+    // ========================================================================
+    // UPDATE 3D GIANT SPIDERS AI
+    // ========================================================================
+    for (let i = spiders.length - 1; i >= 0; i--) {
+      const sp = spiders[i];
+      if (sp.hitFlash > 0) sp.hitFlash -= dt;
+
+      if (sp.dead) {
+        sp.deathTimer += dt;
+        sp.vx *= 0.85;
+        sp.vz *= 0.85;
+        sp.x += sp.vx * dt;
+        sp.z += sp.vz * dt;
+        if (sp.deathTimer > 2.2) spiders.splice(i, 1);
+        continue;
+      }
+
+      const dx = knight.x - sp.x;
+      const dz = knight.z - sp.z;
+      const dist = Math.hypot(dx, dz) || 1.0;
+
+      sp.vx *= Math.pow(0.02, dt);
+      sp.vz *= Math.pow(0.02, dt);
+
+      if (gameStarted && dist < 48.0 && dist > 4.2) {
+        const targetYaw = Math.atan2(dx, dz);
+        let dYaw = targetYaw - sp.yaw;
+        while (dYaw > Math.PI) dYaw -= Math.PI * 2;
+        while (dYaw < -Math.PI) dYaw += Math.PI * 2;
+        sp.yaw += dYaw * Math.min(1.0, dt * 8.0);
+
+        const chaseSpd = 12.5;
+        const nx = sp.x + ((dx / dist) * chaseSpd + sp.vx) * dt;
+        const nz = sp.z + ((dz / dist) * chaseSpd + sp.vz) * dt;
+        if (!checkSolidWorldCollision(nx, nz)) {
+          sp.x = nx;
+          sp.z = nz;
+        }
+        sp.legPhase += dt * 15.0;
+        if (Math.random() < 0.06 && getPondSDF(sp.x, sp.z) < 0) {
+          spawnRipple(sp.x, sp.z, 0.75);
+        }
+      } else {
+        sp.x += sp.vx * dt;
+        sp.z += sp.vz * dt;
+      }
+
+      for (let j = i - 1; j >= 0; j--) {
+        const other = spiders[j];
+        if (other.dead) continue;
+        const sdx = sp.x - other.x, sdz = sp.z - other.z;
+        const sd = Math.hypot(sdx, sdz);
+        if (sd > 0.01 && sd < 6.5) {
+          const push = (6.5 - sd) * 4.0 * dt;
+          sp.x += (sdx / sd) * push;
+          sp.z += (sdz / sd) * push;
+        }
+      }
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx * dt;
+      p.z += p.vz * dt;
+      p.y += p.vy * dt;
+      p.vy -= 42.0 * dt;
+      if (p.y < 0) { p.y = 0; p.vx *= 0.5; p.vz *= 0.5; }
+      p.life -= dt;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    for (let i = dmgTexts.length - 1; i >= 0; i--) {
+      const dtEl = dmgTexts[i];
+      dtEl.y += 8.0 * dt;
+      dtEl.life -= dt;
+      if (dtEl.life <= 0) dmgTexts.splice(i, 1);
+    }
+
+    // Camera Tracking: Smoothly orbits the Cathedral Arch during Title Screen, then swoops to Knight on Enter!
+    if (!gameStarted) {
+      const attractX = ARCH_POS.x + Math.sin(tSec * 0.35) * 14.0 - cols * 0.5;
+      const attractZ = ARCH_POS.z + 14.0 + Math.cos(tSec * 0.28) * 6.0 - rows * 0.52;
+      cam.x += (attractX - cam.x) * Math.min(1.0, dt * 4.0);
+      cam.z += (attractZ - cam.z) * Math.min(1.0, dt * 4.0);
+    } else {
+      introTransition = Math.min(1.0, introTransition + dt * 1.4);
+      cam.x += (knight.x - cols * 0.5 - cam.x) * Math.min(1.0, dt * 8.5);
+      cam.z += (knight.z - rows * 0.52 - cam.z) * Math.min(1.0, dt * 8.5);
+    }
+
+    for (let i = ripples.length - 1; i >= 0; i--) {
+      const rp = ripples[i];
+      rp.r += dt * 16.0;
+      rp.amp *= Math.pow(0.42, dt);
+      if (rp.amp < 0.02 || rp.r > 45.0) ripples.splice(i, 1);
+    }
+
+    const lm = lightModes[lightIdx];
+    cellZ.fill(-9999);
+
+    // 1. Evaluate Ground Meadow, Imperial Causeway, Mirror Lake & Distant Architecture
+    for (let r = 0; r < rows; r++) {
+      const wz = cam.z + r;
+      const wFloorZ = Math.floor(wz);
+
+      for (let c = 0; c < cols; c++) {
+        const idx = r * cols + c;
+        const wx = cam.x + c;
+        const hs = hash2(Math.floor(wx), wFloorZ);
+
+        const rayCoord = wx * 0.58 - wz * 0.42;
+        const r1 = Math.sin(rayCoord * 0.11 + tSec * 0.35) * 0.5 + 0.5;
+        const r2 = Math.sin(rayCoord * 0.25 - 1.7 - tSec * 0.2) * 0.5 + 0.5;
+        const sunBeam = Math.pow(r1 * r2, 1.75) * (wx > 48 ? 1.15 : 0.85);
+
+        const up = sampleUpperArchitecture(wx, wz, hs, tSec);
+        if (up) {
+          cellGlyph[idx] = up.g;
+          cellR[idx] = Math.min(255, up.r + Math.floor(sunBeam * lm.r));
+          cellG[idx] = Math.min(255, up.gr + Math.floor(sunBeam * lm.g));
+          cellB[idx] = Math.min(255, up.b + Math.floor(sunBeam * lm.b));
+          continue;
+        }
+
+        const shoreSDF = getPondSDF(wx, wz);
+        if (shoreSDF > 0) {
+          const distRoad = Math.abs(wx - ARCH_POS.x);
+          if (distRoad < 5.8 && wz > -38.0 && wz < 10.5) {
+            const isCurb = distRoad > 4.8;
+            cellGlyph[idx] = isCurb ? 33 : ((Math.floor(wx) + wFloorZ) % 2 === 0 ? 6 : 3);
+            const stoneV = 0.75 + hs * 0.25;
+            cellR[idx] = Math.min(255, Math.floor((isCurb ? 145 : 105) * stoneV + sunBeam * lm.r * 0.5));
+            cellG[idx] = Math.min(255, Math.floor((isCurb ? 138 : 100) * stoneV + sunBeam * lm.g * 0.5));
+            cellB[idx] = Math.min(255, Math.floor((isCurb ? 125 : 92)  * stoneV + sunBeam * lm.b * 0.5));
+            continue;
+          }
+
+          const wind = Math.sin(wx * 0.12 + wz * 0.08 - tSec * 2.3) + Math.cos(wx * 0.05 - wz * 0.09 - tSec * 1.5) * 0.6;
+          const distK = Math.hypot(wx - knight.x, wz - knight.z);
+          const clump = fbm2(wx * 0.18, wz * 0.18);
+
+          let treeShadow = 1.0;
+          for (let ti = 0; ti < trees.length; ti++) {
+            const tr = trees[ti];
+            if (Math.hypot(wx - tr.x, (wz - tr.z) * 1.3) < tr.r * 0.95) {
+              treeShadow = 0.48;
+              break;
+            }
+          }
+
+          if (clump < 0.21 && distK > 3.5) {
+            cellGlyph[idx] = 1;
+            cellR[idx] = 8; cellG[idx] = 18; cellB[idx] = 11;
+            continue;
+          }
+
+          const flBoost = wx > 45 ? 0.16 : 0.0;
+          if (clump > (0.74 - flBoost) && hs > 0.68 && distK > 3.0) {
+            cellGlyph[idx] = hs > 0.84 ? 8 : (hs > 0.75 ? 9 : 13);
+            if ((hs * 37) % 1 > 0.36) {
+              cellR[idx] = 205; cellG[idx] = 155; cellB[idx] = 252;
+            } else {
+              cellR[idx] = 245; cellG[idx] = 248; cellB[idx] = 220;
+            }
+            continue;
+          }
+
+          let g = 21;
+          const wakeRadius = knight.isSprinting ? 4.4 : 3.2;
+          if (distK < wakeRadius) {
+            g = (wx < knight.x) ? 23 : 22;
+          } else {
+            const ang = wind + (hs - 0.5) * 1.1;
+            if (ang > 0.46) g = 22;
+            else if (ang < -0.46) g = 23;
+            else if (hs > 0.70) g = 21;
+            else if (hs > 0.50) g = 25;
+            else if (hs > 0.32) g = 2;
+            else g = 30;
+          }
+
+          let shade = Math.max(0, Math.min(1, clump * 0.85 + hs * 0.35 + wind * 0.1)) * treeShadow;
+          if (distK < wakeRadius) shade *= 0.45;
+          cellGlyph[idx] = g;
+          cellR[idx] = Math.min(255, Math.floor(20 + shade * 98 + sunBeam * lm.r));
+          cellG[idx] = Math.min(255, Math.floor(56 + shade * 168 + sunBeam * lm.g));
+          cellB[idx] = Math.min(255, Math.floor(28 + shade * 92 + sunBeam * lm.b));
+        } else {
+          let wGradX = 0, wGradZ = 0, ringI = 0, domDX = 1, domDZ = 0;
+
+          for (let i = 0; i < ripples.length; i++) {
+            const rp = ripples[i];
+            const dx = wx - rp.x;
+            const dz = (wz - rp.z) * 1.42;
+            const d = Math.hypot(dx, dz);
+            const dr = d - rp.r;
+            if (Math.abs(dr) < 5.8) {
+              const env = Math.exp(-dr * dr * 0.12) * rp.amp;
+              const ph = dr * 2.1;
+              const s = Math.cos(ph) * env;
+              wGradX += (dx / (d + 0.001)) * (-Math.sin(ph) * env);
+              wGradZ += (dz / (d + 0.001)) * (-Math.sin(ph) * env);
+              if (Math.abs(s) > ringI) {
+                ringI = Math.abs(s);
+                domDX = dx; domDZ = dz;
+              }
+            }
+          }
+
+          const refWX = wx + wGradX * 4.5;
+          const refArchH = (wz - 8.0) * 0.85 + wGradZ * 3.5;
+          const dxRefArch = Math.abs(refWX - ARCH_POS.x);
+          const isArchReflected = (dxRefArch < 24.0 && refArchH > 0 && refArchH < 36.0 && !(dxRefArch < 8.5 && refArchH < 21.0));
+
+          if (ringI > 0.15) {
+            const ang = Math.atan2(domDZ, domDX);
+            const ax = Math.abs(Math.cos(ang)), ay = Math.abs(Math.sin(ang));
+            let g = 27;
+            if (isArchReflected && ringI > 0.26) {
+              g = 11 + Math.floor((hs * 14 + ringI * 9) % 9);
+            } else if (ax > 0.80) {
+              g = domDX < 0 ? 24 : 25;
+            } else if (ay > 0.80) {
+              g = ringI > 0.42 ? 27 : (domDZ > 0 ? 26 : 5);
+            } else {
+              g = (domDX * domDZ < 0) ? 22 : 23;
+            }
+
+            const boost = Math.min(1.0, Math.max(0.35, ringI * 1.5));
+            cellGlyph[idx] = g;
+            cellR[idx] = Math.floor((isArchReflected ? 195 : 108) * boost);
+            cellG[idx] = Math.floor((isArchReflected ? 180 : 136) * boost);
+            cellB[idx] = Math.floor((isArchReflected ? 155 : 165) * boost);
+          } else if (shoreSDF > -0.18 && hs > 0.35) {
+            cellGlyph[idx] = 21;
+            cellR[idx] = 18; cellG[idx] = 52; cellB[idx] = 30;
+          } else if (isArchReflected && hs > 0.24) {
+            cellGlyph[idx] = (r % 2 === 0) ? 6 : 3;
+            cellR[idx] = 92; cellG[idx] = 86; cellB[idx] = 76;
+          } else {
+            cellGlyph[idx] = 0;
+            cellR[idx] = 3; cellG[idx] = 5; cellB[idx] = 8;
+          }
+        }
+      }
+    }
+
+    // 2. Render 3D Triumphal Arch, Obelisks & 3D Swaying Trees into the World Grid
+    render3DTriumphalArchAndObelisks(tSec);
+    render3DTreesToWorldGrid(tSec);
+
+    // 3. Blit World 6x10 ASCII Cells into the Uint32Array Pixel Buffer
+    const bgPacked = packRGB(3, 5, 8);
+    buf32.fill(bgPacked);
+
+    const numCells = cols * rows;
+    for (let idx = 0; idx < numCells; idx++) {
+      const g = cellGlyph[idx];
+      if (g === 0) continue;
+
+      const r = cellR[idx], gr = cellG[idx], b = cellB[idx];
+      const fgPacked = packRGB(r, gr, b);
+      const dimPacked = packRGB(r >> 3, gr >> 3, b >> 3);
+
+      const cellCol = idx % cols;
+      const cellRow = (idx / cols) | 0;
+      const basePxX = cellCol * W_CELL_W;
+      const basePxY = cellRow * W_CELL_H;
+      const lutBase = g * W_CELL_W * W_CELL_H;
+
+      for (let py = 0; py < W_CELL_H; py++) {
+        const rowOffset = (basePxY + py) * imgW + basePxX;
+        const lutRow = lutBase + py * W_CELL_W;
+        for (let px = 0; px < W_CELL_W; px++) {
+          const alpha = worldLUT[lutRow + px];
+          if (alpha > 95) {
+            buf32[rowOffset + px] = fgPacked;
+          } else if (alpha > 24) {
+            buf32[rowOffset + px] = dimPacked;
+          }
+        }
+      }
+    }
+
+    // 4. Depth-Sort Spiders & Knight
+    const sortedSpiders = spiders.slice().sort((a, b) => a.z - b.z);
+    for (let i = 0; i < sortedSpiders.length; i++) {
+      if (sortedSpiders[i].z <= knight.z) rasterizeAndBlitSpider(sortedSpiders[i], tSec);
+    }
+
+    // 5. Rasterize & Composite the 3D Plate Knight + Shoulder-Locked 5x7 Cape + Greatsword
+    const totalScale = 0.85;
+    rasterizeKnightAndCape(displayYaw, knight.walkCycle, totalScale, tSec);
+
+    const footPxX = (knight.x - cam.x) * W_CELL_W;
+    const footPxY = (knight.z - cam.z) * W_CELL_H;
+    const isNearWater = getPondSDF(knight.x, knight.z + 2.0) < 0.15;
+    compositeNanoKnightToPixels(footPxX, footPxY, isNearWater);
+
+    for (let i = 0; i < sortedSpiders.length; i++) {
+      if (sortedSpiders[i].z > knight.z) rasterizeAndBlitSpider(sortedSpiders[i], tSec);
+    }
+
+    // 6. Rasterize & Composite Vesperion, The 3D Nano-ASCII Ash Dragon!
+    rasterizeAndBlitDragon(tSec);
+
+    ctx.putImageData(imgData, 0, 0);
+
+    // 7. Render Volumetric Dragon Fire Breath Cone (Glowing ASCII Fire Glyphs W M @ * ^)
+    if (fireParticles.length > 0) {
+      ctx.font = 'bold 11px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      const fireGlyphs = ['W', 'M', '@', '#', '*', '^', '~'];
+      for (let i = 0; i < fireParticles.length; i++) {
+        const fp = fireParticles[i];
+        const ratio = Math.max(0, fp.life / fp.maxLife);
+        const sx = (fp.x - cam.x) * W_CELL_W;
+        const sy = (fp.z - fp.y * SIN_P - cam.z) * W_CELL_H;
+        if (sx < 0 || sx > imgW || sy < 0 || sy > imgH) continue;
+
+        const gIdx = Math.min(fireGlyphs.length - 1, Math.floor((1.0 - ratio) * fireGlyphs.length));
+        if (ratio > 0.65) ctx.fillStyle = '#fff9db';      // White-gold core flame
+        else if (ratio > 0.35) ctx.fillStyle = '#ff922b'; // Blazing orange fire
+        else ctx.fillStyle = '#c92a2a';                   // Deep crimson ember smoke
+        ctx.fillText(fireGlyphs[gIdx], sx, sy);
+      }
+    }
+
+    // 8. Volumetric Sunlight / Moonlight God-Rays & Phosphor Bloom
+    bloomCtx.drawImage(canvas, 0, 0, bloomCanvas.width, bloomCanvas.height);
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    ctx.globalAlpha = 0.25;
+    ctx.drawImage(bloomCanvas, 0, 0, imgW, imgH);
+
+    if (lm.beamAlpha > 0.1) {
+      ctx.globalAlpha = lm.beamAlpha;
+      for (let b = -2; b < 6; b++) {
+        const beamX = ((b * 210 + Math.sin(tSec * 0.35 + b) * 35) - (cam.x * 1.8) % 210);
+        const grad = ctx.createLinearGradient(beamX, 0, beamX + 160, imgH);
+        const colStr = lightIdx === 0 ? '255, 232, 165' : (lightIdx === 1 ? '165, 215, 255' : '255, 160, 110');
+        grad.addColorStop(0.0, 'rgba(' + colStr + ', 0.26)');
+        grad.addColorStop(0.5, 'rgba(' + colStr + ', 0.10)');
+        grad.addColorStop(1.0, 'rgba(' + colStr + ', 0.0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(beamX, 0);
+        ctx.lineTo(beamX + 85, 0);
+        ctx.lineTo(beamX + 265, imgH);
+        ctx.lineTo(beamX + 145, imgH);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+
+    // 9. Combat Particles, Floating Damage Numbers, Spider HP Bars & SeerJv Name Tag
+    ctx.font = 'bold 10px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      const sx = (p.x - cam.x) * W_CELL_W;
+      const sy = (p.z - p.y * SIN_P - cam.z) * W_CELL_H;
+      ctx.fillStyle = p.col;
+      ctx.fillText(p.ch, sx, sy);
+    }
+
+    for (let i = 0; i < spiders.length; i++) {
+      const sp = spiders[i];
+      if (sp.dead) continue;
+      const sx = (sp.x - cam.x) * W_CELL_W;
+      const sy = (sp.z - cam.z) * W_CELL_H - 28;
+      ctx.fillStyle = 'rgba(255, 90, 105, 0.9)';
+      ctx.fillText('♥'.repeat(sp.hp), sx, sy);
+    }
+
+    for (let i = 0; i < dmgTexts.length; i++) {
+      const dtEl = dmgTexts[i];
+      const sx = (dtEl.x - cam.x) * W_CELL_W;
+      const sy = (dtEl.z - dtEl.y * SIN_P - cam.z) * W_CELL_H;
+      ctx.fillStyle = dtEl.col;
+      ctx.fillText(dtEl.text, sx, sy);
+    }
+
+    const knightPxHeight = 34.5 * SIN_P * totalScale * 2.85;
+    const headY = footPxY - knightPxHeight - knight.y * 2.5 - 7;
+    ctx.font = 'bold 9px "JetBrains Mono", monospace';
+    ctx.fillStyle = 'rgba(245, 250, 255, 0.95)';
+    ctx.fillText(knight.name, footPxX, Math.max(14, headY));
+
+    for (let i = 0; i < spores.length; i++) {
+      const sp = spores[i];
+      sp.x += (sp.vx + Math.sin(tSec + sp.ph) * 0.7) * dt;
+      sp.y += sp.vy * dt;
+      if (sp.y > 38) { sp.y = 0; sp.x = cam.x + Math.random() * cols; sp.z = cam.z + Math.random() * rows; }
+      const sx = (sp.x - cam.x) * W_CELL_W;
+      const sy = (sp.z - sp.y * SIN_P - cam.z) * W_CELL_H;
+      if (sx > 0 && sx < imgW && sy > 0 && sy < imgH) {
+        ctx.fillStyle = (lightIdx === 0 && i % 2 === 0)
+          ? 'rgba(255, 240, 175, 0.85)'
+          : 'rgba(235, 250, 255, 0.82)';
+        ctx.fillText(i % 2 === 0 ? '·' : '*', sx, sy);
+      }
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  spawnRipple(12.0, 17.0, 1.35);
+  spawnRipple(4.0, 23.0, 1.1);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
